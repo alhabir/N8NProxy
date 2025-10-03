@@ -1,0 +1,558 @@
+{
+  "name": "Salla All Events Test Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook/salla",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Salla Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "webhook/salla"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, event: $json.event, merchant: $json.data.store.id, timestamp: new Date().toISOString(), message: 'Event processed successfully' }) }}",
+        "options": {}
+      },
+      "id": "response-node",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract event information from headers and body\nconst input = $input.first();\nconst event = input.json;\n\n// Get headers from the correct location (nested in payload)\nconst headers = event.payload?.headers || event.headers || {};\nconst body = event.payload?.body || event.body || event;\n\n// Get event details from headers with fallbacks\nconst eventName = headers['x-salla-event'] || body.event || 'unknown';\nconst eventId = headers['x-salla-event-id'] || body.id || 'unknown';\nconst merchantId = headers['x-salla-merchant-id'] || body.data?.store?.id || 'unknown';\nconst checksum = headers['x-event-checksum'] || 'unknown';\n\n// Create a comprehensive log entry\nconst logEntry = {\n  timestamp: new Date().toISOString(),\n  event: eventName,\n  eventId: eventId,\n  merchantId: merchantId,\n  checksum: checksum,\n  headers: {\n    'x-salla-event': headers['x-salla-event'] || 'not-provided',\n    'x-salla-event-id': headers['x-salla-event-id'] || 'not-provided',\n    'x-salla-merchant-id': headers['x-salla-merchant-id'] || 'not-provided',\n    'x-event-checksum': headers['x-event-checksum'] || 'not-provided',\n    'x-forwarded-by': headers['x-forwarded-by'] || 'not-provided'\n  },\n  payload: body,\n  eventCategory: getEventCategory(eventName)\n};\n\n// Function to categorize events\nfunction getEventCategory(eventName) {\n  if (eventName.startsWith('order.')) return 'Order';\n  if (eventName.startsWith('customer.')) return 'Customer';\n  if (eventName.startsWith('product.')) return 'Product';\n  if (eventName.startsWith('category.')) return 'Category';\n  if (eventName.startsWith('brand.')) return 'Brand';\n  if (eventName.startsWith('abandoned.cart')) return 'Cart';\n  if (eventName.startsWith('invoice.')) return 'Invoice';\n  if (eventName.startsWith('review.')) return 'Review';\n  if (eventName.startsWith('specialoffer.')) return 'Special Offer';\n  if (eventName.startsWith('store.')) return 'Store';\n  if (eventName.startsWith('shipping.')) return 'Shipping';\n  return 'Other';\n}\n\n// Return the processed data\nreturn {\n  json: {\n    ...logEntry,\n    originalEvent: event,\n    processedAt: new Date().toISOString()\n  }\n};"
+      },
+      "id": "function-node",
+      "name": "Process All Events",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-2",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-3",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-4",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.deleted",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-5",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.refunded",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-6",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.payment.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-7",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.status.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-8",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.products.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-9",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.coupon.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-10",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.total.price.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-11",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.shipment.creating",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-12",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.shipment.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-13",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.shipment.cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-14",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.shipment.return.creating",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-15",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.shipment.return.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-16",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.shipment.return.cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-17",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "order.shipping.address.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-18",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "customer.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-19",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "customer.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-20",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "customer.login",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-21",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "customer.otp.request",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-22",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "product.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-23",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "product.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-24",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "product.deleted",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-25",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "product.available",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-26",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "product.quantity.low",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-27",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "category.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-28",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "category.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-29",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "brand.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-30",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "brand.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-31",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "brand.deleted",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-32",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "abandoned.cart",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-33",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "coupon.applied",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-34",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "invoice.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-35",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "specialoffer.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-36",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "specialoffer.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-37",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "store.branch.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-38",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "store.branch.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-39",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "store.branch.setDefault",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-40",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "store.branch.activated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-41",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "store.branch.deleted",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-42",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "storetax.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-43",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "shipping.zone.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-44",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "shipping.zone.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-45",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "shipping.company.created",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-46",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "shipping.company.updated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-47",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "shipping.company.deleted",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-48",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "review.added",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "if-node",
+      "name": "Check Event Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: 'Unsupported event type', event: $json.event, timestamp: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "error-response",
+      "name": "Unsupported Event",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [800, 500]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Salla Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process All Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process All Events": {
+      "main": [
+        [
+          {
+            "node": "Check Event Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Event Type": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unsupported Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "1",
+  "tags": []
+}
