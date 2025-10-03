@@ -1,0 +1,13 @@
+{
+  "event": "category.created",
+  "version": "2.0",
+  "id": "wh_category_67890",
+  "created_at": "2025-10-03T15:00:00Z",
+  "data": {
+    "id": 1001,
+    "name": "Furniture",
+    "description": "Home furniture collection",
+    "status": "active",
+    "store": { "id": 112233, "name": "Shareef Corner" }
+  }
+}

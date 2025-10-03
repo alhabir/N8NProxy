@@ -1,0 +1,13 @@
+{
+  "event": "brand.created",
+  "version": "2.0",
+  "id": "wh_brand_11111",
+  "created_at": "2025-10-03T15:30:00Z",
+  "data": {
+    "id": 2001,
+    "name": "Luxury Home",
+    "description": "Premium home furniture brand",
+    "status": "active",
+    "store": { "id": 112233, "name": "Shareef Corner" }
+  }
+}

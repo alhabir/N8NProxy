@@ -1,0 +1,15 @@
+{
+  "event": "product.created",
+  "version": "2.0",
+  "id": "wh_product_12345",
+  "created_at": "2025-10-03T14:30:00Z",
+  "data": {
+    "id": 555001,
+    "name": "Super King Velvet Bed",
+    "sku": "BED-SK-2025",
+    "price": 220.00,
+    "status": "active",
+    "quantity": 10,
+    "store": { "id": 112233, "name": "Shareef Corner" }
+  }
+}
