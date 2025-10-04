@@ -1,0 +1,12 @@
+{
+  "event": "category.updated",
+  "version": "2.0",
+  "id": "wh_category_updated_1010",
+  "created_at": "2025-10-03T22:15:00Z",
+  "data": {
+    "id": 333001,
+    "name": "Updated Electronics",
+    "description": "Updated electronics category",
+    "store": { "id": 112233, "name": "Shareef Corner" }
+  }
+}

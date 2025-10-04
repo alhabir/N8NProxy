@@ -1,0 +1,12 @@
+{
+  "event": "customer.otp.request",
+  "version": "2.0",
+  "id": "wh_otp_request_606",
+  "created_at": "2025-10-03T21:15:00Z",
+  "data": {
+    "customer_id": 998877,
+    "phone": "+966501234567",
+    "otp_purpose": "login",
+    "store": { "id": 112233, "name": "Shareef Corner" }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event": "brand.updated",
+  "version": "2.0",
+  "id": "wh_brand_updated_1111",
+  "created_at": "2025-10-03T22:30:00Z",
+  "data": {
+    "id": 444001,
+    "name": "Updated Sony",
+    "description": "Updated Sony brand information",
+    "store": { "id": 112233, "name": "Shareef Corner" }
+  }
+}
