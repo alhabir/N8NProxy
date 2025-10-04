@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Actions API Token
+    |--------------------------------------------------------------------------
+    |
+    | This token is used to authenticate requests to the Actions API endpoints.
+    | N8N workflows should include this token in their Bearer authorization header.
+    |
+    */
+
+    'actions_token' => env('ACTIONS_API_BEARER'),
+
 ];
