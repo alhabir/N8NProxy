@@ -123,4 +123,12 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Actions API Configuration
+    |--------------------------------------------------------------------------
+    */
+
+    'actions_token' => env('ACTIONS_API_BEARER'),
+
 ];
