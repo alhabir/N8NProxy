@@ -1,0 +1,361 @@
+{
+  "name": "N8NProxy Actions Test Suite",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "test-orders",
+        "options": {}
+      },
+      "id": "webhook-orders",
+      "name": "Test Orders Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "test-orders"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "test-products",
+        "options": {}
+      },
+      "id": "webhook-products",
+      "name": "Test Products Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "webhookId": "test-products"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "test-customers",
+        "options": {}
+      },
+      "id": "webhook-customers",
+      "name": "Test Customers Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "webhookId": "test-customers"
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.proxyBase }}/actions/orders",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "merchant_id",
+              "value": "={{ $vars.merchantId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "orders-list",
+      "name": "List Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.proxyBase }}/actions/products",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "merchant_id",
+              "value": "={{ $vars.merchantId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "products-list",
+      "name": "List Products",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.proxyBase }}/actions/customers",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "merchant_id",
+              "value": "={{ $vars.merchantId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "customers-list",
+      "name": "List Customers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.proxyBase }}/actions/orders",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={\n  \"merchant_id\": \"{{ $vars.merchantId }}\",\n  \"data\": {\n    \"number\": \"TEST-ORDER-001\",\n    \"status\": \"pending\",\n    \"customer\": {\n      \"id\": 12345,\n      \"name\": \"Test Customer\",\n      \"email\": \"test@example.com\"\n    },\n    \"items\": [\n      {\n        \"product_id\": 1,\n        \"quantity\": 2,\n        \"price\": 100\n      }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "id": "orders-create",
+      "name": "Create Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.proxyBase }}/actions/products",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={\n  \"merchant_id\": \"{{ $vars.merchantId }}\",\n  \"data\": {\n    \"name\": \"Test Product\",\n    \"description\": \"A test product created via API\",\n    \"price\": 99.99,\n    \"status\": \"available\"\n  }\n}",
+        "options": {}
+      },
+      "id": "products-create",
+      "name": "Create Product",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.proxyBase }}/actions/coupons",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={\n  \"merchant_id\": \"{{ $vars.merchantId }}\",\n  \"data\": {\n    \"code\": \"TEST10\",\n    \"discount_type\": \"percentage\",\n    \"discount_value\": 10,\n    \"minimum_amount\": 100,\n    \"usage_limit\": 100\n  }\n}",
+        "options": {}
+      },
+      "id": "coupons-create",
+      "name": "Create Coupon",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.proxyBase }}/actions/categories",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={\n  \"merchant_id\": \"{{ $vars.merchantId }}\",\n  \"data\": {\n    \"name\": \"Test Category\",\n    \"description\": \"A test category created via API\",\n    \"status\": \"active\"\n  }\n}",
+        "options": {}
+      },
+      "id": "categories-create",
+      "name": "Create Category",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.proxyBase }}/actions/exports",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={\n  \"merchant_id\": \"{{ $vars.merchantId }}\",\n  \"data\": {\n    \"type\": \"orders\",\n    \"format\": \"csv\",\n    \"filters\": {\n      \"date_from\": \"2024-01-01\",\n      \"date_to\": \"2024-12-31\"\n    }\n  }\n}",
+        "options": {}
+      },
+      "id": "exports-create",
+      "name": "Create Export",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 700]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Process API responses and log results\nconst results = [];\n\nfor (const item of $input.all()) {\n  const nodeName = item.json.nodeName || 'Unknown';\n  const status = item.json.status || 'Unknown';\n  const data = item.json.data || {};\n  \n  results.push({\n    node: nodeName,\n    status: status,\n    success: status >= 200 && status < 300,\n    data: data,\n    timestamp: new Date().toISOString()\n  });\n}\n\nreturn results.map(result => ({ json: result }));"
+      },
+      "id": "process-results",
+      "name": "Process Results",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"N8NProxy Actions Test Suite completed\",\n  \"results\": {{ $json }},\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 500]
+    }
+  ],
+  "connections": {
+    "Test Orders Webhook": {
+      "main": [
+        [
+          {
+            "node": "List Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Products Webhook": {
+      "main": [
+        [
+          {
+            "node": "List Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Customers Webhook": {
+      "main": [
+        [
+          {
+            "node": "List Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Orders": {
+      "main": [
+        [
+          {
+            "node": "Create Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Products": {
+      "main": [
+        [
+          {
+            "node": "Create Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Customers": {
+      "main": [
+        [
+          {
+            "node": "Create Coupon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Order": {
+      "main": [
+        [
+          {
+            "node": "Process Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Product": {
+      "main": [
+        [
+          {
+            "node": "Process Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Coupon": {
+      "main": [
+        [
+          {
+            "node": "Create Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Category": {
+      "main": [
+        [
+          {
+            "node": "Create Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Export": {
+      "main": [
+        [
+          {
+            "node": "Process Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Results": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-10-04T20:00:00.000Z",
+      "updatedAt": "2024-10-04T20:00:00.000Z",
+      "id": "n8nproxy-test",
+      "name": "N8NProxy Test"
+    }
+  ],
+  "triggerCount": 3,
+  "updatedAt": "2024-10-04T20:00:00.000Z",
+  "versionId": "1"
+}
