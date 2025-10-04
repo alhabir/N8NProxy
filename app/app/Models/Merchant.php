@@ -48,4 +48,14 @@ class Merchant extends Model
     {
         return $this->hasMany(WebhookEvent::class);
     }
+
+    public function token()
+    {
+        return $this->hasOne(MerchantToken::class);
+    }
+
+    public function actionAudits()
+    {
+        return $this->hasMany(SallaActionAudit::class);
+    }
 }
