@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Http;
 
 class OAuthRefresher
 {
+    public function __construct(private OAuthTokenStore $tokenStore) {}
+
     public function refresh(string $sallaMerchantId, string $refreshToken): array
     {
         $res = Http::asForm()->post((string) config('salla_api.oauth.token_url'), [
@@ -16,14 +18,21 @@ class OAuthRefresher
         ]);
 
         if (!$res->ok()) {
-            throw new \RuntimeException('Failed to refresh token: '.$res->status());
+            throw new \Exception('Failed to refresh OAuth token: '.$res->status());
         }
 
         $body = $res->json();
+        $accessToken = (string) ($body['access_token'] ?? '');
+        $newRefreshToken = (string) ($body['refresh_token'] ?? $refreshToken);
+        $expiresAt = now()->addSeconds((int) ($body['expires_in'] ?? 3600));
+
+        // Update tokens in storage
+        $this->tokenStore->updateAccess($sallaMerchantId, $accessToken, $newRefreshToken, $expiresAt);
+
         return [
-            'access' => (string) ($body['access_token'] ?? ''),
-            'refresh' => (string) ($body['refresh_token'] ?? $refreshToken),
-            'expires_at' => now()->addSeconds((int) ($body['expires_in'] ?? 3600)),
+            'access' => $accessToken,
+            'refresh' => $newRefreshToken,
+            'expires_at' => $expiresAt,
         ];
     }
 }

@@ -50,4 +50,10 @@ class OAuthTokenStore
 
         return $record->refresh();
     }
+
+    public function needsRefresh(MerchantToken $token): bool
+    {
+        // Return true if token expires within the next 60 seconds
+        return $token->access_token_expires_at->isBefore(now()->addSeconds(60));
+    }
 }
