@@ -50,14 +50,15 @@ class SignatureValidator
         return $this->lastError;
     }
 
-    public static function validateFromHeaders(array $headers, string $rawBody, string $secret): array
+    public static function validateFromHeaders(array $headers, string $rawBody, string $secret, ?string &$error = null): bool
     {
         $validator = new self($secret);
 
         $provided = self::extractHeaderSignature($headers, $validator->headerName);
         $ok = $validator->validate($rawBody, $provided);
+        $error = $validator->getLastError();
 
-        return [$ok, $ok ? 'ok' : ($validator->getLastError() ?? 'error')];
+        return $ok;
     }
 
     private static function extractHeaderSignature(array $headers, string $headerName): ?string

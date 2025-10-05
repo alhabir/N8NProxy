@@ -139,3 +139,20 @@ it('rejects a webhook with an invalid signature', function () {
 
     expect(WebhookEvent::count())->toBe(0);
 });
+
+it('rejects a webhook without a signature header', function () {
+    $payload = buildPayload('998877');
+    $raw = json_encode($payload);
+
+    $response = $this->call('POST', '/webhooks/salla', [], [], [], [
+        'CONTENT_TYPE' => 'application/json',
+    ], $raw);
+
+    $response->assertStatus(401);
+    $response->assertJson([
+        'error' => 'invalid_signature',
+        'reason' => 'missing_signature_header',
+    ]);
+
+    expect(WebhookEvent::count())->toBe(0);
+});

@@ -20,7 +20,8 @@ class SallaWebhookController extends Controller
             ->map(fn($v) => is_array($v) ? ($v[0] ?? null) : $v)
             ->toArray();
 
-        [$sigOk, $sigWhy] = SignatureValidator::validateFromHeaders($headers, $raw, (string) env('SALLA_WEBHOOK_SECRET', ''));
+        $sigError = null;
+        $sigOk = SignatureValidator::validateFromHeaders($headers, $raw, (string) env('SALLA_WEBHOOK_SECRET', ''), $sigError);
 
         $payload = json_decode($raw, true);
         if (!is_array($payload)) {
@@ -80,6 +81,7 @@ class SallaWebhookController extends Controller
         $event->save();
 
         if (!$sigOk) {
+            Log::warning('Salla webhook signature invalid', ['reason' => $sigError, 'event_id' => $event->id]);
             $event->update(['forward_status' => 'skipped']);
             return response()->json(['accepted' => true, 'duplicate' => false, 'status' => 'skipped', 'id' => $event->id], 202);
         }
