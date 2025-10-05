@@ -4,18 +4,85 @@ namespace App\Services\Salla;
 
 class SignatureValidator
 {
-    public static function validate(array $headers, string $rawBody, string $secret): array
+    private string $secret;
+
+    private string $headerName;
+
+    private ?string $lastError = null;
+
+    public function __construct(?string $secret = null, ?string $headerName = null)
     {
-        $headerName = config('salla.signature_header', 'X-Salla-Signature');
-        $provided = $headers[$headerName] ?? $headers[strtolower($headerName)] ?? $headers[strtoupper($headerName)] ?? null;
-        if ($provided === null) {
-            return [false, 'missing_signature_header'];
+        $this->secret = $secret ?? (string) config('salla.webhook_secret', env('SALLA_WEBHOOK_SECRET', ''));
+        $this->headerName = $headerName ?? config('salla.signature_header', 'X-Salla-Signature');
+    }
+
+    public function validate(string $rawBody, ?string $signature): bool
+    {
+        $this->lastError = null;
+
+        if ($this->secret === '') {
+            $this->lastError = 'missing_secret';
+            return false;
         }
 
-        $computed = base64_encode(hash_hmac('sha256', $rawBody, $secret, true));
+        if ($signature === null || $signature === '') {
+            $this->lastError = 'missing_signature_header';
+            return false;
+        }
 
-        $ok = hash_equals($provided, $computed);
-        return [$ok, $ok ? 'ok' : 'mismatch'];
+        $computed = $this->computeSignature($rawBody);
+
+        if (!hash_equals($computed, (string) $signature)) {
+            $this->lastError = 'mismatch';
+            return false;
+        }
+
+        return true;
+    }
+
+    public function getHeaderName(): string
+    {
+        return $this->headerName;
+    }
+
+    public function getLastError(): ?string
+    {
+        return $this->lastError;
+    }
+
+    public static function validateFromHeaders(array $headers, string $rawBody, string $secret): array
+    {
+        $validator = new self($secret);
+
+        $provided = self::extractHeaderSignature($headers, $validator->headerName);
+        $ok = $validator->validate($rawBody, $provided);
+
+        return [$ok, $ok ? 'ok' : ($validator->getLastError() ?? 'error')];
+    }
+
+    private static function extractHeaderSignature(array $headers, string $headerName): ?string
+    {
+        $candidates = [$headerName, strtolower($headerName), strtoupper($headerName)];
+
+        foreach ($candidates as $candidate) {
+            if (!array_key_exists($candidate, $headers)) {
+                continue;
+            }
+
+            $value = $headers[$candidate];
+            if (is_array($value)) {
+                return $value[0] ?? null;
+            }
+
+            return $value;
+        }
+
+        return null;
+    }
+
+    private function computeSignature(string $rawBody): string
+    {
+        return base64_encode(hash_hmac('sha256', $rawBody, $this->secret, true));
     }
 }
 

@@ -13,7 +13,16 @@
 
 pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
-    ->in('Feature');
+    ->in(
+        'Feature/Actions',
+        'Feature/Auth',
+        'Feature/ProfileTest.php',
+        'Feature/SallaAppEventsTest.php',
+        'Feature/ExampleTest.php',
+    );
+
+uses(Tests\WithoutRefreshDatabaseTestCase::class)
+    ->in('Feature/SallaWebhookTest.php');
 
 /*
 |--------------------------------------------------------------------------

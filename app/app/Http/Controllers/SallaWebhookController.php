@@ -20,7 +20,7 @@ class SallaWebhookController extends Controller
             ->map(fn($v) => is_array($v) ? ($v[0] ?? null) : $v)
             ->toArray();
 
-        [$sigOk, $sigWhy] = SignatureValidator::validate($headers, $raw, (string) env('SALLA_WEBHOOK_SECRET', ''));
+        [$sigOk, $sigWhy] = SignatureValidator::validateFromHeaders($headers, $raw, (string) env('SALLA_WEBHOOK_SECRET', ''));
 
         $payload = json_decode($raw, true);
         if (!is_array($payload)) {
