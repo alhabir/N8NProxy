@@ -13,15 +13,18 @@ return new class extends Migration
     {
         Schema::create('merchant_tokens', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('merchant_id')->index();            // FK to merchants.id
-            $table->string('salla_merchant_id')->index();    // redundant quick lookup
-            $table->text('access_token');                    // encrypted cast
-            $table->text('refresh_token');                   // encrypted cast
-            $table->timestamp('access_token_expires_at')->nullable();
+            $table->uuid('merchant_id')->index();
+            $table->string('salla_merchant_id')->unique();
+            $table->text('access_token');
+            $table->text('refresh_token');
+            $table->timestamp('access_token_expires_at');
             $table->timestamps();
-            $table->unique(['merchant_id']);
-            
-            $table->foreign('merchant_id')->references('id')->on('merchants')->onDelete('cascade');
+
+            $table->foreign('merchant_id')
+                ->references('id')
+                ->on('merchants')
+                ->cascadeOnDelete();
+            $table->unique('merchant_id');
         });
     }
 
