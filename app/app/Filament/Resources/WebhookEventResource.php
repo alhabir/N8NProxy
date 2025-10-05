@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WebhookEventResource\Pages;
+use App\Models\Merchant;
 use App\Models\WebhookEvent;
 use App\Services\Forwarder;
 use Filament\Resources\Resource;
@@ -20,16 +21,16 @@ class WebhookEventResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('forward_status')->badge()->sortable(),
-                Tables\Columns\TextColumn::make('event')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('merchant.salla_merchant_id')->label('Merchant')->sortable(),
-                Tables\Columns\TextColumn::make('received_at')->dateTime()->sortable(),
-                Tables\Columns\TextColumn::make('forward_attempts')->sortable(),
-                Tables\Columns\TextColumn::make('forwarded_response_code'),
+                Tables\Columns\TextColumn::make('status')->badge()->sortable(),
+                Tables\Columns\TextColumn::make('salla_event')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('salla_merchant_id')->label('Merchant')->sortable(),
+                Tables\Columns\TextColumn::make('attempts')->sortable(),
+                Tables\Columns\TextColumn::make('last_error')->limit(50),
+                Tables\Columns\TextColumn::make('updated_at')->dateTime()->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('forward_status')->options([
-                    'pending' => 'Pending',
+                Tables\Filters\SelectFilter::make('status')->options([
+                    'stored' => 'Stored',
                     'sent' => 'Sent',
                     'failed' => 'Failed',
                     'skipped' => 'Skipped',
@@ -39,25 +40,22 @@ class WebhookEventResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\Action::make('retryNow')
                     ->label('Retry Now')
-                    ->visible(fn(WebhookEvent $record) => in_array($record->forward_status, ['failed','pending']))
+                    ->visible(fn(WebhookEvent $record) => in_array($record->status, ['failed','stored']))
                     ->action(function (WebhookEvent $record) {
-                        $merchant = $record->merchant;
+                        $merchant = Merchant::where('salla_merchant_id', $record->salla_merchant_id)->first();
                         if (!$merchant) {
                             return;
                         }
                         $result = app(Forwarder::class)->forward($record, $merchant);
                         $record->update([
-                            'forward_attempts' => $record->forward_attempts + ($result['attempts'] ?? 1),
-                            'forwarded_response_code' => $result['code'] ?? null,
-                            'forwarded_response_body' => $result['body'] ?? null,
-                            'last_forward_error' => $result['error'] ?? null,
-                            'forwarded_at' => $result['ok'] ? now() : null,
-                            'forward_status' => $result['ok'] ? 'sent' : 'failed',
+                            'attempts' => $record->attempts + ($result['attempts'] ?? 1),
+                            'last_error' => $result['error'] ?? null,
+                            'status' => $result['ok'] ? 'sent' : 'failed',
                         ]);
                     })
                     ->color('warning')
             ])
-            ->defaultSort('received_at', 'desc');
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getPages(): array

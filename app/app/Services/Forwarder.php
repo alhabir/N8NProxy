@@ -22,9 +22,9 @@ class Forwarder
         $headers = [
             'Content-Type' => 'application/json',
             'X-Forwarded-By' => 'n8n-ai-salla-proxy',
-            'X-Salla-Event' => $event->event,
+            'X-Salla-Event' => $event->salla_event,
             'X-Salla-Event-Id' => $event->salla_event_id,
-            'X-Salla-Merchant-Id' => $merchant->salla_merchant_id,
+            'X-Salla-Merchant-Id' => $event->salla_merchant_id,
             'X-Event-Checksum' => $checksum,
         ];
 

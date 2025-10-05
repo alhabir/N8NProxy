@@ -17,24 +17,24 @@ class RetryFailedForwards extends Command
         $maxAttempts = (int) env('FORWARD_RETRY_SCHEDULE_MAX_ATTEMPTS', 6);
         $forwarder = new Forwarder();
 
-        WebhookEvent::where('forward_status', 'failed')
-            ->where('forward_attempts', '<', $maxAttempts)
-            ->orderBy('received_at')
+        WebhookEvent::where('status', 'failed')
+            ->where('attempts', '<', $maxAttempts)
+            ->orderBy('created_at')
             ->chunkById(100, function ($events) use ($forwarder) {
                 foreach ($events as $event) {
-                    $merchant = Merchant::find($event->merchant_id);
+                    $merchant = Merchant::where('salla_merchant_id', $event->salla_merchant_id)->first();
                     if (!$merchant || !$merchant->is_active || empty($merchant->n8n_base_url)) {
-                        $event->update(['forward_status' => 'skipped']);
+                        $event->update([
+                            'status' => 'skipped',
+                            'last_error' => 'inactive_merchant',
+                        ]);
                         continue;
                     }
                     $result = $forwarder->forward($event, $merchant);
                     $event->update([
-                        'forward_attempts' => $event->forward_attempts + ($result['attempts'] ?? 1),
-                        'forwarded_response_code' => $result['code'] ?? null,
-                        'forwarded_response_body' => $result['body'] ?? null,
-                        'last_forward_error' => $result['error'] ?? null,
-                        'forwarded_at' => $result['ok'] ? now() : null,
-                        'forward_status' => $result['ok'] ? 'sent' : 'failed',
+                        'attempts' => $event->attempts + ($result['attempts'] ?? 1),
+                        'last_error' => $result['error'] ?? null,
+                        'status' => $result['ok'] ? 'sent' : 'failed',
                     ]);
                 }
             }, 'id');

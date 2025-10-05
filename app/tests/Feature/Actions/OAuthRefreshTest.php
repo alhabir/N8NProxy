@@ -38,6 +38,9 @@ class OAuthRefreshTest extends TestCase
     {
         // Create merchant with expiring token
         $merchant = Merchant::create([
+            'store_id' => 'store-111222',
+            'email' => 'merchant111222@example.com',
+            'password' => bcrypt('secret'),
             'salla_merchant_id' => '111222',
             'store_name' => 'Test Store',
             'is_active' => true,
@@ -81,6 +84,9 @@ class OAuthRefreshTest extends TestCase
     public function test_token_needs_refresh_detection(): void
     {
         $merchant = Merchant::create([
+            'store_id' => 'store-333444',
+            'email' => 'merchant333444@example.com',
+            'password' => bcrypt('secret'),
             'salla_merchant_id' => '333444',
             'store_name' => 'Test Store',
             'is_active' => true,

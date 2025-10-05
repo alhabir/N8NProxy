@@ -7,8 +7,6 @@ use App\Models\WebhookEvent;
 use App\Services\Forwarder;
 use App\Services\Salla\SignatureValidator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class SallaWebhookController extends Controller
@@ -67,45 +65,54 @@ class SallaWebhookController extends Controller
             return response()->json(['accepted' => true, 'duplicate' => true, 'id' => $existing->id]);
         }
 
-        $event = new WebhookEvent([
-            'merchant_id' => $merchant->id,
+        $event = WebhookEvent::create([
+            'salla_event' => (string) $eventName,
             'salla_event_id' => (string) $sallaEventId,
-            'event' => (string) $eventName,
-            'received_at' => now(),
-            'signature_valid' => (bool) $sigOk,
+            'salla_merchant_id' => (string) $merchantId,
             'headers' => $headers,
             'payload' => $payload,
-            'forward_status' => 'pending',
+            'status' => 'stored',
         ]);
-        $event->save();
 
         if (!$sigOk) {
-            $event->update(['forward_status' => 'skipped']);
-            return response()->json(['accepted' => true, 'duplicate' => false, 'status' => 'skipped', 'id' => $event->id], 202);
+            $event->update([
+                'status' => 'skipped',
+                'last_error' => 'invalid_signature',
+            ]);
+            return response()->json([
+                'accepted' => true,
+                'duplicate' => false,
+                'status' => 'skipped',
+                'id' => $event->id,
+            ], 202);
         }
 
         if (!$merchant->is_active || empty($merchant->n8n_base_url)) {
-            $event->update(['forward_status' => 'skipped']);
-            return response()->json(['accepted' => true, 'duplicate' => false, 'status' => 'skipped', 'id' => $event->id]);
+            $event->update([
+                'status' => 'skipped',
+                'last_error' => 'inactive_merchant',
+            ]);
+            return response()->json([
+                'accepted' => true,
+                'duplicate' => false,
+                'status' => 'skipped',
+                'id' => $event->id,
+            ]);
         }
 
         $forwarder = new Forwarder();
         $result = $forwarder->forward($event, $merchant);
 
-        $update = [
-            'forward_attempts' => $event->forward_attempts + ($result['attempts'] ?? 1),
-            'forwarded_response_code' => $result['code'] ?? null,
-            'forwarded_response_body' => $result['body'] ?? null,
-            'last_forward_error' => $result['error'] ?? null,
-            'forwarded_at' => $result['ok'] ? now() : null,
-            'forward_status' => $result['ok'] ? 'sent' : 'failed',
-        ];
-        $event->update($update);
+        $event->update([
+            'attempts' => $event->attempts + ($result['attempts'] ?? 1),
+            'last_error' => $result['error'] ?? null,
+            'status' => $result['ok'] ? 'sent' : 'failed',
+        ]);
 
         return response()->json([
             'accepted' => true,
             'duplicate' => false,
-            'status' => $event->forward_status,
+            'status' => $event->status,
             'id' => $event->id,
         ]);
     }
