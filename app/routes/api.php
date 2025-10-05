@@ -9,7 +9,7 @@ use App\Http\Controllers\Actions\ExportsController;
 use Illuminate\Support\Facades\Route;
 
 // Actions API routes (protected by bearer token)
-Route::middleware(['auth:api'])->prefix('actions')->group(function () {
+Route::middleware(['actions.auth'])->prefix('actions')->group(function () {
     // Orders
     Route::get('/orders', [OrdersController::class, 'index']);
     Route::get('/orders/{id}', [OrdersController::class, 'show']);

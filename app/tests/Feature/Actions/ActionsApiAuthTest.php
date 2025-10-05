@@ -2,49 +2,52 @@
 
 namespace Tests\Feature\Actions;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ActionsApiAuthTest extends TestCase
 {
-    use RefreshDatabase;
-
-    /**
-     * Test that actions endpoints require authentication
-     */
     public function test_actions_endpoints_require_authentication(): void
     {
-        $response = $this->getJson('/api/actions/orders/list?merchant_id=123');
-        
+        $response = $this->getJson('/api/actions/orders?merchant_id=123');
+
         $response->assertStatus(401)
-            ->assertJson(['error' => 'Unauthorized - Missing Bearer token']);
+            ->assertJson(['error' => 'Missing or invalid authorization header']);
     }
 
-    /**
-     * Test that invalid token is rejected
-     */
     public function test_invalid_token_is_rejected(): void
     {
         $response = $this->withHeader('Authorization', 'Bearer invalid_token')
-            ->getJson('/api/actions/orders/list?merchant_id=123');
-        
+            ->getJson('/api/actions/orders?merchant_id=123');
+
         $response->assertStatus(401)
-            ->assertJson(['error' => 'Unauthorized - Invalid token']);
+            ->assertJson(['error' => 'Invalid API token']);
     }
 
-    /**
-     * Test that valid token is accepted
-     */
-    public function test_valid_token_is_accepted(): void
+    public function test_valid_token_allows_request_to_proceed(): void
     {
-        // Set the test token in config
-        config(['app.actions_token' => 'test_token_123']);
-        
+        config(['app.actions_api_bearer' => 'test_token_123']);
+
+        $mockClient = \Mockery::mock(\App\Services\Salla\SallaHttpClient::class);
+        $mockClient->shouldReceive('makeRequest')
+            ->once()
+            ->with('123', 'get', \Mockery::type('string'))
+            ->andReturn([
+                'success' => true,
+                'status' => 200,
+                'data' => ['message' => 'ok'],
+                'headers' => [],
+            ]);
+
+        app()->instance(\App\Services\Salla\SallaHttpClient::class, $mockClient);
+
         $response = $this->withHeader('Authorization', 'Bearer test_token_123')
-            ->getJson('/api/actions/orders/list');
-        
-        // Should fail with validation error (missing merchant_id) rather than auth error
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['merchant_id']);
+            ->getJson('/api/actions/orders?merchant_id=123');
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'status' => 200,
+                'data' => ['message' => 'ok'],
+            ]);
     }
 }
