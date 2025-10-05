@@ -12,14 +12,13 @@ use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
 {
-    public function __construct(
-        private SignatureValidator $signatureValidator,
-        private WebhookForwarder $forwarder
-    ) {}
+    public function __construct(private WebhookForwarder $forwarder) {}
 
     public function handle(Request $request): Response
     {
-        $headers = $request->headers->all();
+        $headers = collect($request->headers->all())
+            ->map(fn ($value) => is_array($value) ? ($value[0] ?? null) : $value)
+            ->toArray();
         $payload = $request->all();
         
         // Extract event information
@@ -33,13 +32,23 @@ class WebhookController extends Controller
         }
 
         // Validate signature
-        $signature = $request->header('X-Salla-Signature');
-        if (!$this->signatureValidator->validate($request->getContent(), $signature)) {
+        [$sigOk, $sigError] = SignatureValidator::validate(
+            $headers,
+            $request->getContent(),
+            (string) config('salla.webhook_secret')
+        );
+
+        if (!$sigOk) {
             Log::warning('Invalid webhook signature', [
                 'event' => $event,
                 'merchant_id' => $merchantId,
+                'reason' => $sigError,
             ]);
-            return response('Invalid signature', 401);
+
+            return response()->json([
+                'error' => 'invalid_signature',
+                'reason' => $sigError,
+            ], 401);
         }
 
         // Store webhook event
