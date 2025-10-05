@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\SallaWebhookController;
 use App\Http\Controllers\AppEventsController;
 use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\AdminController;
@@ -17,7 +17,7 @@ Route::get('/docs/merchant', [DocsController::class, 'merchant']);
 Route::get('/docs/admin', [DocsController::class, 'admin']);
 
 // Webhook endpoints
-Route::post('/webhooks/salla', [WebhookController::class, 'handle']);
+Route::post('/webhooks/salla', [SallaWebhookController::class, 'ingest']);
 Route::post('/app-events/authorized', [AppEventsController::class, 'authorized']);
 
 // Auth routes (Breeze)

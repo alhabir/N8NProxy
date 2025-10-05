@@ -19,6 +19,18 @@ class SallaWebhookController extends Controller
             ->toArray();
 
         [$sigOk, $sigWhy] = SignatureValidator::validate($headers, $raw, (string) env('SALLA_WEBHOOK_SECRET', ''));
+        if (!$sigOk) {
+            $response = [
+                'accepted' => false,
+                'error' => 'invalid_signature',
+            ];
+
+            if (!empty($sigWhy)) {
+                $response['reason'] = $sigWhy;
+            }
+
+            return response()->json($response, 401);
+        }
 
         $payload = json_decode($raw, true);
         if (!is_array($payload)) {
@@ -73,19 +85,6 @@ class SallaWebhookController extends Controller
             'payload' => $payload,
             'status' => 'stored',
         ]);
-
-        if (!$sigOk) {
-            $event->update([
-                'status' => 'skipped',
-                'last_error' => 'invalid_signature',
-            ]);
-            return response()->json([
-                'accepted' => true,
-                'duplicate' => false,
-                'status' => 'skipped',
-                'id' => $event->id,
-            ], 202);
-        }
 
         if (!$merchant->is_active || empty($merchant->n8n_base_url)) {
             $event->update([

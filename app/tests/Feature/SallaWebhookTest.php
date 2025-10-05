@@ -36,21 +36,33 @@ it('stores and forwards happy path order.created', function () {
     expect(WebhookEvent::count())->toBe(1);
 });
 
-it('skips invalid signature but stores', function () {
+it('rejects invalid signature', function () {
     $raw = file_get_contents(base_path('tests/Fixtures/salla/customer.created.json'));
     $res = $this->call('POST', '/webhooks/salla', [], [], [], [
         'HTTP_X_SALLA_SIGNATURE' => 'bad',
         'CONTENT_TYPE' => 'application/json',
     ], $raw);
-    $res->assertStatus(202);
-    expect(WebhookEvent::count())->toBe(1);
-    expect(WebhookEvent::first()->status)->toBe('skipped');
+    $res->assertStatus(401);
+    $res->assertJson([
+        'accepted' => false,
+        'error' => 'invalid_signature',
+    ]);
+    expect(WebhookEvent::count())->toBe(0);
 });
 
 it('idempotent by salla_event_id', function () {
     $raw = file_get_contents(base_path('tests/Fixtures/salla/customer.created.json'));
     $sig = sign($raw);
     $payload = json_decode($raw, true);
+
+    Merchant::create([
+        'store_id' => 'store-'.$payload['data']['store']['id'],
+        'email' => 'merchant'.$payload['data']['store']['id'].'@example.com',
+        'password' => bcrypt('secret'),
+        'salla_merchant_id' => (string) $payload['data']['store']['id'],
+        'n8n_base_url' => '',
+        'is_active' => false,
+    ]);
 
     $this->call('POST', '/webhooks/salla', [], [], [], [
         'HTTP_X_SALLA_SIGNATURE' => $sig,
