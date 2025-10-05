@@ -11,7 +11,10 @@
       "name": "Test Orders Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "test-orders"
     },
     {
@@ -24,7 +27,10 @@
       "name": "Test Products Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 400],
+      "position": [
+        240,
+        400
+      ],
       "webhookId": "test-products"
     },
     {
@@ -37,12 +43,15 @@
       "name": "Test Customers Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 500],
+      "position": [
+        240,
+        500
+      ],
       "webhookId": "test-customers"
     },
     {
       "parameters": {
-        "url": "={{ $vars.proxyBase }}/actions/orders",
+        "url": "={{ $vars.proxyBase || 'https://app.n8ndesigner.com/api' }}/actions/orders",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendQuery": true,
@@ -60,11 +69,14 @@
       "name": "List Orders",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $vars.proxyBase }}/actions/products",
+        "url": "={{ $vars.proxyBase || 'https://app.n8ndesigner.com/api' }}/actions/products",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendQuery": true,
@@ -82,11 +94,14 @@
       "name": "List Products",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 400]
+      "position": [
+        460,
+        400
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $vars.proxyBase }}/actions/customers",
+        "url": "={{ $vars.proxyBase || 'https://app.n8ndesigner.com/api' }}/actions/customers",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendQuery": true,
@@ -104,11 +119,14 @@
       "name": "List Customers",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 500]
+      "position": [
+        460,
+        500
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $vars.proxyBase }}/actions/orders",
+        "url": "={{ $vars.proxyBase || 'https://app.n8ndesigner.com/api' }}/actions/orders",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
@@ -120,11 +138,14 @@
       "name": "Create Order",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $vars.proxyBase }}/actions/products",
+        "url": "={{ $vars.proxyBase || 'https://app.n8ndesigner.com/api' }}/actions/products",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
@@ -136,11 +157,14 @@
       "name": "Create Product",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 400]
+      "position": [
+        680,
+        400
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $vars.proxyBase }}/actions/coupons",
+        "url": "={{ $vars.proxyBase || 'https://app.n8ndesigner.com/api' }}/actions/coupons",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
@@ -152,11 +176,14 @@
       "name": "Create Coupon",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 500]
+      "position": [
+        680,
+        500
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $vars.proxyBase }}/actions/categories",
+        "url": "={{ $vars.proxyBase || 'https://app.n8ndesigner.com/api' }}/actions/categories",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
@@ -168,11 +195,14 @@
       "name": "Create Category",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 600]
+      "position": [
+        680,
+        600
+      ]
     },
     {
       "parameters": {
-        "url": "={{ $vars.proxyBase }}/actions/exports",
+        "url": "={{ $vars.proxyBase || 'https://app.n8ndesigner.com/api' }}/actions/exports",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
@@ -184,7 +214,10 @@
       "name": "Create Export",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 700]
+      "position": [
+        680,
+        700
+      ]
     },
     {
       "parameters": {
@@ -194,7 +227,10 @@
       "name": "Process Results",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [900, 500]
+      "position": [
+        900,
+        500
+      ]
     },
     {
       "parameters": {
@@ -205,7 +241,10 @@
       "name": "Success Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1120, 500]
+      "position": [
+        1120,
+        500
+      ]
     }
   ],
   "connections": {

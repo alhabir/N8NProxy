@@ -18,5 +18,10 @@ abstract class TestCase extends BaseTestCase
         }
 
         parent::setUp();
+
+        $this->withServerVariables([
+            'HTTP_HOST' => config('panels.merchant_domain'),
+            'SERVER_NAME' => config('panels.merchant_domain'),
+        ]);
     }
 }

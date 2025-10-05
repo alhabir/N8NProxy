@@ -6,6 +6,16 @@ use Tests\TestCase;
 
 class ActionsApiAuthTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withServerVariables([
+            'HTTP_HOST' => config('panels.admin_domain'),
+            'SERVER_NAME' => config('panels.admin_domain'),
+        ]);
+    }
+
     public function test_actions_endpoints_require_authentication(): void
     {
         $response = $this->getJson('/api/actions/orders?merchant_id=123');
@@ -30,7 +40,14 @@ class ActionsApiAuthTest extends TestCase
         $mockClient = \Mockery::mock(\App\Services\Salla\SallaHttpClient::class);
         $mockClient->shouldReceive('makeRequest')
             ->once()
-            ->with('123', 'get', \Mockery::type('string'))
+            ->withArgs(function ($merchantId, $method, $endpoint, $payload = []) {
+                $this->assertEquals('123', $merchantId);
+                $this->assertEquals('get', $method);
+                $this->assertIsString($endpoint);
+                $this->assertIsArray($payload);
+
+                return true;
+            })
             ->andReturn([
                 'success' => true,
                 'status' => 200,

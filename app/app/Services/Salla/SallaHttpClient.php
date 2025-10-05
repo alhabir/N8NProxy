@@ -4,8 +4,10 @@ namespace App\Services\Salla;
 
 use App\Models\MerchantToken;
 use App\Models\SallaActionAudit;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class SallaHttpClient
 {
@@ -16,42 +18,25 @@ class SallaHttpClient
 
     public function makeRequest(string $sallaMerchantId, string $method, string $endpoint, array $data = []): array
     {
-        $token = $this->tokenStore->getValidToken($sallaMerchantId);
-        
-        if (!$token) {
-            $token = $this->tokenStore->get($sallaMerchantId);
-            if ($token && $token->isExpired()) {
-                $token = $this->refresher->refresh($token);
-            }
-        }
-
-        if (!$token) {
-            throw new \Exception("No valid token found for merchant: {$sallaMerchantId}");
-        }
+        $token = $this->resolveToken($sallaMerchantId);
 
         $startTime = microtime(true);
         $url = $this->buildUrl($endpoint);
 
         try {
-            $response = Http::withToken($token->access_token)
-                ->timeout(30)
-                ->$method($url, $data);
+            $response = $this->sendRequest($token->access_token, $method, $url, $data);
 
             $duration = (microtime(true) - $startTime) * 1000;
 
             $this->auditRequest($sallaMerchantId, $method, $endpoint, $data, $response, $duration);
 
             if ($response->status() === 401) {
-                // Try to refresh token and retry once
-                $refreshedToken = $this->refresher->refresh($token);
-                if ($refreshedToken) {
-                    $response = Http::withToken($refreshedToken->access_token)
-                        ->timeout(30)
-                        ->$method($url, $data);
-                    
-                    $duration = (microtime(true) - $startTime) * 1000;
-                    $this->auditRequest($sallaMerchantId, $method, $endpoint, $data, $response, $duration);
-                }
+                $token = $this->refresher->refreshUsingToken($token);
+
+                $response = $this->sendRequest($token->access_token, $method, $url, $data);
+
+                $duration = (microtime(true) - $startTime) * 1000;
+                $this->auditRequest($sallaMerchantId, $method, $endpoint, $data, $response, $duration);
             }
 
             return [
@@ -61,13 +46,41 @@ class SallaHttpClient
                 'headers' => $response->headers(),
             ];
 
-        } catch (\Exception $e) {
+        } catch (Throwable $e) {
             $duration = (microtime(true) - $startTime) * 1000;
-            
+
             $this->auditRequest($sallaMerchantId, $method, $endpoint, $data, null, $duration, $e->getMessage());
-            
+
             throw $e;
         }
+    }
+
+    private function resolveToken(string $sallaMerchantId): MerchantToken
+    {
+        $token = $this->tokenStore->getValidToken($sallaMerchantId);
+
+        if ($token) {
+            return $token;
+        }
+
+        $token = $this->tokenStore->get($sallaMerchantId);
+
+        if (!$token) {
+            throw new \Exception("No token found for merchant: {$sallaMerchantId}");
+        }
+
+        if ($this->tokenStore->needsRefresh($token)) {
+            $token = $this->refresher->refreshUsingToken($token);
+        }
+
+        return $token;
+    }
+
+    private function sendRequest(string $accessToken, string $method, string $url, array $data = []): Response
+    {
+        return Http::withToken($accessToken)
+            ->timeout(30)
+            ->$method($url, $data);
     }
 
     private function buildUrl(string $endpoint): string

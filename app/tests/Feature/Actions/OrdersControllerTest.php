@@ -16,10 +16,15 @@ class OrdersControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Set test token
         config(['app.actions_token' => 'test_token']);
         config(['salla_api.base' => 'https://api.salla.test/admin/v2']);
+
+        $this->withServerVariables([
+            'HTTP_HOST' => config('panels.admin_domain'),
+            'SERVER_NAME' => config('panels.admin_domain'),
+        ]);
     }
 
     /**

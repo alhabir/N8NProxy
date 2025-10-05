@@ -23,7 +23,7 @@
                     
                     <h3>Step 2: Configure n8n URL</h3>
                     <ol>
-                        <li>Log into your merchant dashboard</li>
+                        <li>Log into your merchant dashboard at <a href="{{ config('panels.merchant_url') }}" class="text-indigo-600">{{ config('panels.merchant_url') }}</a></li>
                         <li>Go to Settings → n8n Configuration</li>
                         <li>Enter your n8n instance URL (e.g., https://your-n8n.com)</li>
                         <li>Set the webhook path (default: /webhook/salla)</li>
@@ -32,7 +32,7 @@
                     
                     <h3>Step 3: Test the Connection</h3>
                     <ol>
-                        <li>In your merchant dashboard, click "Send Test Webhook"</li>
+                        <li>In your merchant dashboard (`{{ config('panels.merchant_url') }}`), click "Send Test Webhook"</li>
                         <li>Check your n8n instance for the test webhook</li>
                         <li>Verify the webhook was received successfully</li>
                     </ol>
@@ -92,6 +92,7 @@
                     <ul>
                         <li>Check the webhook logs in your dashboard</li>
                         <li>Review the actions audit for API calls</li>
+                        <li>Actions API base URL: <code>{{ rtrim(config('panels.admin_url'), '/') }}/api</code> (requires bearer token)</li>
                         <li>Contact support with your merchant ID</li>
                     </ul>
                 </div>

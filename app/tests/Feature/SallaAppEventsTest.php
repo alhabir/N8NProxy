@@ -11,6 +11,16 @@ class SallaAppEventsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withServerVariables([
+            'HTTP_HOST' => config('panels.admin_domain'),
+            'SERVER_NAME' => config('panels.admin_domain'),
+        ]);
+    }
+
     /**
      * Test app.store.authorize event handling
      */
@@ -31,7 +41,7 @@ class SallaAppEventsTest extends TestCase
             ],
         ];
 
-        $response = $this->postJson('/api/app-events/authorized', $payload);
+        $response = $this->postJson('/app-events/authorized', $payload);
 
         $response->assertStatus(200)
             ->assertJson(['ok' => true]);
@@ -81,7 +91,7 @@ class SallaAppEventsTest extends TestCase
             ],
         ];
 
-        $response = $this->postJson('/api/app-events/authorized', $payload);
+        $response = $this->postJson('/app-events/authorized', $payload);
 
         $response->assertStatus(200);
 
@@ -110,7 +120,7 @@ class SallaAppEventsTest extends TestCase
             ],
         ];
 
-        $response = $this->postJson('/api/app-events/installed', $payload);
+        $response = $this->postJson('/app-events/installed', $payload);
 
         $response->assertStatus(200)
             ->assertJson(['ok' => true]);
@@ -137,7 +147,7 @@ class SallaAppEventsTest extends TestCase
             ],
         ];
 
-        $response = $this->postJson('/api/app-events/authorized', $payload);
+        $response = $this->postJson('/app-events/authorized', $payload);
 
         $response->assertStatus(400)
             ->assertJson(['error' => 'Missing required data']);

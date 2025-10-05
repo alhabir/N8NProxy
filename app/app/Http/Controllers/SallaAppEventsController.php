@@ -6,7 +6,9 @@ use App\Models\Merchant;
 use App\Services\Salla\OAuthTokenStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SallaAppEventsController extends Controller
 {
@@ -37,20 +39,8 @@ class SallaAppEventsController extends Controller
         // Calculate expiration time
         $expiresAt = now()->addSeconds($expiresIn);
         
-        // Ensure merchant exists and is active
-        $merchant = Merchant::firstOrCreate(
-            ['salla_merchant_id' => $sallaMerchantId],
-            [
-                'store_name' => $storeName ?: 'Store ' . $sallaMerchantId,
-                'is_active' => true,
-            ]
-        );
-        
-        // Update store name if provided
-        if ($storeName && $merchant->store_name !== $storeName) {
-            $merchant->update(['store_name' => $storeName]);
-        }
-        
+        $merchant = $this->ensureMerchant($sallaMerchantId, $storeName, data_get($payload, 'data.store.email'));
+
         // Store tokens
         $this->tokenStore->put($sallaMerchantId, $accessToken, $refreshToken, $expiresAt);
         
@@ -70,29 +60,63 @@ class SallaAppEventsController extends Controller
     public function installed(Request $request): JsonResponse
     {
         $payload = $request->json()->all();
-        
+
         $sallaMerchantId = data_get($payload, 'data.store.id');
         $storeName = data_get($payload, 'data.store.name');
-        
+
         if (!$sallaMerchantId) {
             Log::error('Missing store ID in app.installed event', $payload);
             return response()->json(['error' => 'Missing store ID'], 400);
         }
-        
-        // Ensure merchant placeholder exists
-        $merchant = Merchant::firstOrCreate(
-            ['salla_merchant_id' => $sallaMerchantId],
-            [
-                'store_name' => $storeName ?: 'Store ' . $sallaMerchantId,
-                'is_active' => true,
-            ]
-        );
-        
+
+        $merchant = $this->ensureMerchant($sallaMerchantId, $storeName, data_get($payload, 'data.store.email'));
+
         Log::info('App installed for merchant', [
             'merchant_id' => $sallaMerchantId,
             'store_name' => $storeName,
         ]);
-        
+
         return response()->json(['ok' => true]);
+    }
+
+    private function ensureMerchant(string $sallaMerchantId, ?string $storeName, ?string $email): Merchant
+    {
+        $normalizedEmail = $email ?: sprintf('merchant-%s@n8ndesigner.local', $sallaMerchantId);
+        $defaultStoreId = sprintf('salla-%s', $sallaMerchantId);
+
+        $merchant = Merchant::firstOrCreate(
+            ['salla_merchant_id' => $sallaMerchantId],
+            [
+                'store_id' => $defaultStoreId,
+                'email' => $normalizedEmail,
+                'password' => Hash::make(Str::random(40)),
+                'store_name' => $storeName ?: 'Store ' . $sallaMerchantId,
+                'is_active' => true,
+            ]
+        );
+
+        $updates = [];
+
+        if ($storeName && $merchant->store_name !== $storeName) {
+            $updates['store_name'] = $storeName;
+        }
+
+        if ($email && $merchant->email !== $email) {
+            $updates['email'] = $email;
+        }
+
+        if (!$merchant->store_id) {
+            $updates['store_id'] = $defaultStoreId;
+        }
+
+        if (!$merchant->is_active) {
+            $updates['is_active'] = true;
+        }
+
+        if (!empty($updates)) {
+            $merchant->update($updates);
+        }
+
+        return $merchant;
     }
 }

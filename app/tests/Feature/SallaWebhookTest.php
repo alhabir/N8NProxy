@@ -9,6 +9,13 @@ function sign(string $raw): string {
     return base64_encode(hash_hmac('sha256', $raw, env('SALLA_WEBHOOK_SECRET', ''), true));
 }
 
+beforeEach(function () {
+    $this->withServerVariables([
+        'HTTP_HOST' => config('panels.admin_domain'),
+        'SERVER_NAME' => config('panels.admin_domain'),
+    ]);
+});
+
 it('stores and forwards happy path order.created', function () {
     $merchant = Merchant::create([
         'store_id' => 'store-112233',
