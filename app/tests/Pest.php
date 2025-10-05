@@ -24,6 +24,9 @@ pest()->extend(Tests\TestCase::class)
 uses(Tests\WithoutRefreshDatabaseTestCase::class)
     ->in('Feature/SallaWebhookTest.php');
 
+pest()->extend(Tests\CommandTestCase::class)
+    ->in('Command');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

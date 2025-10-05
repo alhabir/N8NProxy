@@ -15,17 +15,16 @@ class ViewWebhookEvent extends ViewRecord
     {
         return $infolist
             ->schema([
-                TextEntry::make('event'),
+                TextEntry::make('salla_event'),
                 TextEntry::make('salla_event_id')->copyable(),
-                TextEntry::make('merchant.salla_merchant_id'),
-                TextEntry::make('received_at')->dateTime(),
-                TextEntry::make('forward_status'),
-                TextEntry::make('forward_attempts'),
-                TextEntry::make('forwarded_response_code'),
-                TextEntry::make('last_forward_error')->columnSpanFull(),
+                TextEntry::make('salla_merchant_id'),
+                TextEntry::make('status'),
+                TextEntry::make('attempts'),
+                TextEntry::make('last_error')->columnSpanFull(),
                 TextEntry::make('headers')->json()->columnSpanFull(),
                 TextEntry::make('payload')->json()->columnSpanFull(),
-                TextEntry::make('forwarded_response_body')->json()->columnSpanFull(),
+                TextEntry::make('created_at')->dateTime(),
+                TextEntry::make('updated_at')->dateTime(),
             ]);
     }
 }
