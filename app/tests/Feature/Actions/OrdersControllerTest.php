@@ -28,6 +28,9 @@ class OrdersControllerTest extends TestCase
     private function createMerchantWithToken(): Merchant
     {
         $merchant = Merchant::create([
+            'store_id' => 'store-123456',
+            'email' => 'merchant123456@example.com',
+            'password' => bcrypt('secret'),
             'salla_merchant_id' => '123456',
             'store_name' => 'Test Store',
             'is_active' => true,

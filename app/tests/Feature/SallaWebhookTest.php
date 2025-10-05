@@ -11,6 +11,9 @@ function sign(string $raw): string {
 
 it('stores and forwards happy path order.created', function () {
     $merchant = Merchant::create([
+        'store_id' => 'store-112233',
+        'email' => 'merchant112233@example.com',
+        'password' => bcrypt('secret'),
         'salla_merchant_id' => '112233',
         'n8n_base_url' => 'https://example.com',
         'is_active' => true,
@@ -41,7 +44,7 @@ it('skips invalid signature but stores', function () {
     ], $raw);
     $res->assertStatus(202);
     expect(WebhookEvent::count())->toBe(1);
-    expect(WebhookEvent::first()->forward_status)->toBe('skipped');
+    expect(WebhookEvent::first()->status)->toBe('skipped');
 });
 
 it('idempotent by salla_event_id', function () {

@@ -58,6 +58,9 @@ class SallaAppEventsTest extends TestCase
     {
         // Create existing merchant
         $merchant = Merchant::create([
+            'store_id' => 'store-789456',
+            'email' => 'existing789456@example.com',
+            'password' => bcrypt('secret'),
             'salla_merchant_id' => '789456',
             'store_name' => 'Old Store Name',
             'is_active' => true,
