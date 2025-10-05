@@ -211,6 +211,9 @@ https://app.n8ndesigner.com/app-events/authorized
 - Backup your database regularly
 EOF
 
+echo "📂 Syncing staged files to build directory..."
+rsync -a . ../siteground/
+
 echo "📦 Creating deployment package..."
 cd ..
 zip -r siteground-n8nproxy.zip siteground/ -x "*.DS_Store" "*/node_modules/*" "*/tests/*"
