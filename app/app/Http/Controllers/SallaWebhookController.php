@@ -52,17 +52,23 @@ class SallaWebhookController extends Controller
             return response()->json(['error' => 'merchant_id missing'], 400);
         }
 
-        $merchant = Merchant::firstOrCreate(
-            ['salla_merchant_id' => (string) $merchantId],
-            [
-                'n8n_base_url' => '',
-                'is_active' => false,
-            ],
-        );
+        $merchant = Merchant::where('salla_merchant_id', (string) $merchantId)->first();
 
         $existing = WebhookEvent::where('salla_event_id', $sallaEventId)->first();
         if ($existing) {
             return response()->json(['accepted' => true, 'duplicate' => true, 'id' => $existing->id]);
+        }
+
+        if (!$sigOk) {
+            logger()->warning('Salla webhook signature validation failed', [
+                'salla_event_id' => $sallaEventId,
+                'error' => $sigError,
+            ]);
+
+            return response()->json([
+                'error' => 'invalid_signature',
+                'reason' => $sigError,
+            ], 401);
         }
 
         $event = WebhookEvent::create([
@@ -74,29 +80,10 @@ class SallaWebhookController extends Controller
             'status' => 'stored',
         ]);
 
-        if (!$sigOk) {
-            logger()->warning('Salla webhook signature validation failed', [
-                'event_id' => $event->id,
-                'salla_event_id' => $sallaEventId,
-                'error' => $sigError,
-            ]);
-
+        if (!$merchant || !$merchant->is_active || empty($merchant->n8n_base_url)) {
             $event->update([
                 'status' => 'skipped',
-                'last_error' => $sigError ?? 'invalid_signature',
-            ]);
-            return response()->json([
-                'accepted' => true,
-                'duplicate' => false,
-                'status' => $event->status,
-                'id' => $event->id,
-            ], 202);
-        }
-
-        if (!$merchant->is_active || empty($merchant->n8n_base_url)) {
-            $event->update([
-                'status' => 'skipped',
-                'last_error' => 'inactive_merchant',
+                'last_error' => $merchant ? 'inactive_merchant' : 'merchant_not_found',
             ]);
             return response()->json([
                 'accepted' => true,

@@ -36,15 +36,18 @@ it('stores and forwards happy path order.created', function () {
     expect(WebhookEvent::count())->toBe(1);
 });
 
-it('skips invalid signature but stores', function () {
+it('rejects invalid signature without storing event', function () {
     $raw = file_get_contents(base_path('tests/Fixtures/salla/customer.created.json'));
     $res = $this->call('POST', '/webhooks/salla', [], [], [], [
         'HTTP_X_SALLA_SIGNATURE' => 'bad',
         'CONTENT_TYPE' => 'application/json',
     ], $raw);
-    $res->assertStatus(202);
-    expect(WebhookEvent::count())->toBe(1);
-    expect(WebhookEvent::first()->status)->toBe('skipped');
+    $res->assertStatus(401);
+    $res->assertJson([
+        'error' => 'invalid_signature',
+        'reason' => 'mismatch',
+    ]);
+    expect(WebhookEvent::count())->toBe(0);
 });
 
 it('idempotent by salla_event_id', function () {
