@@ -29,6 +29,11 @@ class OAuthRefreshTest extends TestCase
             'salla_api.oauth.client_id' => 'test_client_id',
             'salla_api.oauth.client_secret' => 'test_client_secret',
         ]);
+
+        $this->withServerVariables([
+            'HTTP_HOST' => config('panels.admin_domain'),
+            'SERVER_NAME' => config('panels.admin_domain'),
+        ]);
     }
 
     /**
@@ -103,9 +108,17 @@ class OAuthRefreshTest extends TestCase
 
         $this->assertTrue($this->tokenStore->needsRefresh($expiringToken));
 
-        // Fresh token
+        $otherMerchant = Merchant::create([
+            'store_id' => 'store-555666',
+            'email' => 'merchant555666@example.com',
+            'password' => bcrypt('secret'),
+            'salla_merchant_id' => '555666',
+            'store_name' => 'Fresh Store',
+            'is_active' => true,
+        ]);
+
         $freshToken = MerchantToken::create([
-            'merchant_id' => $merchant->id,
+            'merchant_id' => $otherMerchant->id,
             'salla_merchant_id' => '555666',
             'access_token' => 'fresh_token',
             'refresh_token' => 'refresh_token',

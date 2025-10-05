@@ -13,6 +13,8 @@ Add to `.env`:
 ```
 APP_NAME=N8NProxy
 APP_URL=http://127.0.0.1:8000
+ADMIN_APP_URL=http://127.0.0.1:8000
+MERCHANT_APP_URL=http://127.0.0.1:8000
 
 # Salla App keys (from your dashboard)
 SALLA_CLIENT_ID=a5500786-2c22-4ca2-bab9-4cc6e0cd4906
@@ -30,6 +32,7 @@ FORWARD_DEFAULT_TIMEOUT_MS=6000
 FORWARD_SYNC_RETRIES=2
 FORWARD_RETRY_SCHEDULE_MAX_ATTEMPTS=6
 ALLOW_TEST_MODE=true
+SESSION_DOMAIN=null
 
 # Actions API protection (simple shared token)
 ACTIONS_API_BEARER=change_me_strong_random_token
@@ -41,6 +44,15 @@ Run migrations:
 php artisan migrate
 ```
 
+## Domains & Panels
+
+The application serves multiple entry points from one codebase:
+
+- **Admin panel / APIs / webhooks:** `https://app.n8ndesigner.com`
+- **Merchant portal:** `https://merchant.n8ndesigner.com`
+
+Update `ADMIN_APP_URL`, `MERCHANT_APP_URL`, and `SESSION_DOMAIN` in your `.env` to match your deployment. These values populate `config/panels.php` so Blade templates and named routes always generate the correct hostnames. See `docs/README_UBUNTU_DEPLOY.md` for full production guidance.
+
 ## Config
 `config/salla.php`:
 - `signature_header`: `X-Salla-Signature`
@@ -50,53 +62,60 @@ php artisan migrate
 
 ## Routes
 
-### Webhooks (Triggers)
-- `POST /api/webhook/salla` — main webhook ingest
-- `POST /api/app-events/authorized` — capture OAuth tokens from Salla app events
-- `POST /api/app-events/installed` — track app installations
+All admin/webhook/API traffic is served from **`https://app.n8ndesigner.com`**. Merchant self-service pages render on **`https://merchant.n8ndesigner.com`**.
 
-### Actions API (Protected by Bearer token)
-All actions endpoints require `Authorization: Bearer {ACTIONS_API_BEARER}` header.
+### Webhooks (app.n8ndesigner.com)
+- `POST /webhooks/salla` — main webhook ingest
+- `POST /app-events/authorized` — capture OAuth tokens from Salla app events
+
+### Merchant Panel (merchant.n8ndesigner.com)
+- `GET /` — landing / marketing page
+- `GET /docs/merchant` — merchant documentation
+- `GET /dashboard` — merchant dashboard (auth required)
+- `GET /settings/n8n` — manage webhook forwarding target
+
+### Actions API (app.n8ndesigner.com, protected by Bearer token)
+All actions endpoints require `Authorization: Bearer {ACTIONS_API_BEARER}` with base URL `https://app.n8ndesigner.com/api/actions`.
 
 #### Orders
-- `POST /api/actions/orders/create` — Create order
-- `DELETE /api/actions/orders/delete` — Delete order
-- `GET /api/actions/orders/get` — Get single order
-- `GET /api/actions/orders/list` — List orders
-- `PATCH /api/actions/orders/update` — Update order
+- `POST /orders/create` — Create order
+- `DELETE /orders/delete` — Delete order
+- `GET /orders/get` — Get single order
+- `GET /orders/list` — List orders
+- `PATCH /orders/update` — Update order
 
 #### Products
-- `POST /api/actions/products/create` — Create product
-- `DELETE /api/actions/products/delete` — Delete product
-- `GET /api/actions/products/get` — Get single product
-- `GET /api/actions/products/list` — List products
-- `PATCH /api/actions/products/update` — Update product
+- `POST /products/create` — Create product
+- `DELETE /products/delete` — Delete product
+- `GET /products/get` — Get single product
+- `GET /products/list` — List products
+- `PATCH /products/update` — Update product
 
 #### Customers
-- `DELETE /api/actions/customers/delete` — Delete customer
-- `GET /api/actions/customers/get` — Get single customer
-- `GET /api/actions/customers/list` — List customers
-- `PATCH /api/actions/customers/update` — Update customer
+- `DELETE /customers/delete` — Delete customer
+- `GET /customers/get` — Get single customer
+- `GET /customers/list` — List customers
+- `PATCH /customers/update` — Update customer
 
 #### Marketing/Coupons
-- `POST /api/actions/marketing/coupons/create` — Create coupon
-- `DELETE /api/actions/marketing/coupons/delete` — Delete coupon
-- `GET /api/actions/marketing/coupons/get` — Get single coupon
-- `GET /api/actions/marketing/coupons/list` — List coupons
-- `PATCH /api/actions/marketing/coupons/update` — Update coupon
+- `POST /marketing/coupons/create` — Create coupon
+- `DELETE /marketing/coupons/delete` — Delete coupon
+- `GET /marketing/coupons/get` — Get single coupon
+- `GET /marketing/coupons/list` — List coupons
+- `PATCH /marketing/coupons/update` — Update coupon
 
 #### Categories
-- `POST /api/actions/categories/create` — Create category
-- `DELETE /api/actions/categories/delete` — Delete category
-- `GET /api/actions/categories/get` — Get single category
-- `GET /api/actions/categories/list` — List categories
-- `PATCH /api/actions/categories/update` — Update category
+- `POST /categories/create` — Create category
+- `DELETE /categories/delete` — Delete category
+- `GET /categories/get` — Get single category
+- `GET /categories/list` — List categories
+- `PATCH /categories/update` — Update category
 
 #### Exports
-- `POST /api/actions/exports/create` — Create export job
-- `GET /api/actions/exports/list` — List export jobs
-- `GET /api/actions/exports/status` — Get export status
-- `GET /api/actions/exports/download` — Download export file
+- `POST /exports/create` — Create export job
+- `GET /exports/list` — List export jobs
+- `GET /exports/status` — Get export status
+- `GET /exports/download` — Download export file
 
 ## Flow
 1) Verify signature: base64(hmac-sha256(raw_body, `SALLA_WEBHOOK_SECRET`)) in header `X-Salla-Signature`.

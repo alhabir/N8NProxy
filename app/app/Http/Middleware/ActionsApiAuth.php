@@ -17,7 +17,7 @@ class ActionsApiAuth
         }
 
         $token = substr($authHeader, 7);
-        $expectedToken = config('app.actions_api_bearer');
+        $expectedToken = config('app.actions_api_bearer') ?: config('app.actions_token');
 
         if (!$expectedToken || $token !== $expectedToken) {
             return response()->json(['error' => 'Invalid API token'], 401);
