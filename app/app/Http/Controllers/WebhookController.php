@@ -7,7 +7,6 @@ use App\Models\Merchant;
 use App\Services\Salla\SignatureValidator;
 use App\Services\Salla\WebhookForwarder;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
@@ -17,7 +16,7 @@ class WebhookController extends Controller
         private WebhookForwarder $forwarder
     ) {}
 
-    public function handle(Request $request): Response
+    public function handle(Request $request)
     {
         $headers = $request->headers->all();
         $payload = $request->all();
@@ -33,13 +32,25 @@ class WebhookController extends Controller
         }
 
         // Validate signature
-        $signature = $request->header('X-Salla-Signature');
+        $signature = $request->headers->get($this->signatureValidator->getHeaderName());
         if (!$this->signatureValidator->validate($request->getContent(), $signature)) {
+            $reason = $this->signatureValidator->getLastError();
+
             Log::warning('Invalid webhook signature', [
                 'event' => $event,
                 'merchant_id' => $merchantId,
+                'reason' => $reason,
             ]);
-            return response('Invalid signature', 401);
+
+            $status = match ($reason) {
+                'missing_secret' => 500,
+                default => 401,
+            };
+
+            return response()->json([
+                'error' => 'invalid_signature',
+                'reason' => $reason,
+            ], $status);
         }
 
         // Store webhook event
