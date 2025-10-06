@@ -2,50 +2,61 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Merchant;
-use App\Models\WebhookEvent;
-use App\Models\SallaActionAudit;
 use App\Models\AppSetting;
+use App\Models\Merchant;
+use App\Models\SallaActionAudit;
+use App\Models\WebhookEvent;
 use App\Services\Salla\WebhookForwarder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
     public function __construct(
         private WebhookForwarder $forwarder
-    ) {}
+    ) {
+    }
 
     public function index()
     {
-        $stats = [
-            'total_merchants' => Merchant::count(),
-            'approved_merchants' => Merchant::where('is_approved', true)->count(),
-            'pending_merchants' => Merchant::where('is_approved', false)->count(),
-            'total_webhooks' => WebhookEvent::count(),
-            'total_actions' => SallaActionAudit::count(),
+        $counts = [
+            'merchants' => Merchant::count(),
+            'webhook_events' => WebhookEvent::count(),
+            'salla_action_audits' => SallaActionAudit::count(),
         ];
 
-        $recentWebhooks = WebhookEvent::orderBy('created_at', 'desc')->limit(10)->get();
-        $recentActions = SallaActionAudit::orderBy('created_at', 'desc')->limit(10)->get();
+        $recentWebhooks = WebhookEvent::query()
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
 
-        return view('admin.index', compact('stats', 'recentWebhooks', 'recentActions'));
+        $recentActions = SallaActionAudit::query()
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
+        return view('admin.index', [
+            'counts' => $counts,
+            'recentWebhooks' => $recentWebhooks,
+            'recentActions' => $recentActions,
+        ]);
     }
 
     public function merchants(Request $request)
     {
         $query = Merchant::query();
-        
+
         if ($request->has('search')) {
-            $query->where('store_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            $query->where(function ($builder) use ($request) {
+                $builder->where('store_name', 'like', '%' . $request->search . '%')
+                    ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
         }
-        
+
         if ($request->has('status')) {
             $query->where('is_approved', $request->status === 'approved');
         }
 
-        $merchants = $query->orderBy('created_at', 'desc')->paginate(20);
+        $merchants = $query->orderByDesc('created_at')->paginate(20);
 
         return view('admin.merchants', compact('merchants'));
     }
@@ -53,57 +64,76 @@ class AdminController extends Controller
     public function approveMerchant(Request $request, Merchant $merchant)
     {
         $merchant->update(['is_approved' => true]);
-        
+
         return back()->with('success', "Merchant {$merchant->store_name} has been approved.");
     }
 
     public function appSettings()
     {
-        $settings = AppSetting::all()->keyBy('key');
+        $settingKeys = [
+            'ACTIONS_API_BEARER',
+            'FORWARD_DEFAULT_TIMEOUT_MS',
+            'FORWARD_SYNC_RETRIES',
+            'FORWARD_RETRY_SCHEDULE_MAX_ATTEMPTS',
+            'ALLOW_TEST_MODE',
+        ];
+
+        $settings = AppSetting::many($settingKeys);
+
         return view('admin.app-settings', compact('settings'));
     }
 
-    public function updateAppSettings(Request $request)
+    public function appSettingsSave(Request $request)
     {
-        foreach ($request->except('_token') as $key => $value) {
-            AppSetting::updateOrCreate(['key' => $key], ['value' => $value]);
+        $validated = $request->validate([
+            'actions_api_bearer' => ['nullable', 'string'],
+            'forward_default_timeout_ms' => ['required', 'integer', 'min:100', 'max:120000'],
+            'forward_sync_retries' => ['required', 'integer', 'min:0', 'max:10'],
+            'forward_retry_schedule_max_attempts' => ['required', 'integer', 'min:0', 'max:50'],
+            'allow_test_mode' => ['boolean'],
+        ]);
+
+        $validated['allow_test_mode'] = $request->boolean('allow_test_mode');
+
+        $mapping = [
+            'actions_api_bearer' => 'ACTIONS_API_BEARER',
+            'forward_default_timeout_ms' => 'FORWARD_DEFAULT_TIMEOUT_MS',
+            'forward_sync_retries' => 'FORWARD_SYNC_RETRIES',
+            'forward_retry_schedule_max_attempts' => 'FORWARD_RETRY_SCHEDULE_MAX_ATTEMPTS',
+            'allow_test_mode' => 'ALLOW_TEST_MODE',
+        ];
+
+        foreach ($mapping as $input => $key) {
+            $value = $validated[$input] ?? null;
+
+            if ($input === 'allow_test_mode') {
+                $value = $value ? '1' : '0';
+            }
+
+            AppSetting::set($key, $value);
         }
 
-        return back()->with('success', 'App settings updated successfully!');
+        return back()->with('success', 'App settings updated successfully.');
     }
 
-    public function webhooks(Request $request)
+    public function webhooks()
     {
-        $query = WebhookEvent::query();
-        
-        if ($request->has('merchant_id')) {
-            $query->where('salla_merchant_id', $request->merchant_id);
-        }
-        
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
+        $events = WebhookEvent::query()
+            ->orderByDesc('created_at')
+            ->limit(100)
+            ->get();
 
-        $webhooks = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        return view('admin.webhooks', compact('webhooks'));
+        return view('admin.webhooks', ['events' => $events]);
     }
 
-    public function actionsAudit(Request $request)
+    public function actionsAudit()
     {
-        $query = SallaActionAudit::query();
-        
-        if ($request->has('merchant_id')) {
-            $query->where('merchant_id', $request->merchant_id);
-        }
-        
-        if ($request->has('resource')) {
-            $query->where('resource', $request->resource);
-        }
+        $audits = SallaActionAudit::query()
+            ->orderByDesc('created_at')
+            ->limit(100)
+            ->get();
 
-        $actions = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        return view('admin.actions-audit', compact('actions'));
+        return view('admin.actions-audit', ['audits' => $audits]);
     }
 
     public function sendTestWebhook(Request $request, Merchant $merchant)
@@ -112,7 +142,6 @@ class AdminController extends Controller
             return back()->with('error', 'Merchant has no n8n URL configured.');
         }
 
-        // Create a test webhook event
         $testEvent = WebhookEvent::create([
             'salla_event' => 'order.created',
             'salla_event_id' => 'admin_test_' . time(),
@@ -134,13 +163,12 @@ class AdminController extends Controller
             'status' => 'stored',
         ]);
 
-        // Forward the test event
         $success = $this->forwarder->forward($testEvent, $merchant);
 
         if ($success) {
             return back()->with('success', "Test webhook sent to {$merchant->store_name} successfully!");
-        } else {
-            return back()->with('error', "Failed to send test webhook to {$merchant->store_name}.");
         }
+
+        return back()->with('error', "Failed to send test webhook to {$merchant->store_name}.");
     }
 }
