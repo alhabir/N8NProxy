@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\WebhookEvent;
 use App\Models\SallaActionAudit;
+use App\Models\WebhookEvent;
 use App\Services\Salla\WebhookForwarder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,19 +12,20 @@ class MerchantController extends Controller
 {
     public function __construct(
         private WebhookForwarder $forwarder
-    ) {}
+    ) {
+    }
 
     public function dashboard()
     {
         $merchant = Auth::user();
-        
+
         $recentWebhooks = WebhookEvent::where('salla_merchant_id', $merchant->salla_merchant_id)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->limit(20)
             ->get();
 
         $recentActions = SallaActionAudit::where('merchant_id', $merchant->id)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->limit(10)
             ->get();
 
@@ -40,7 +41,7 @@ class MerchantController extends Controller
     public function updateN8nSettings(Request $request)
     {
         $merchant = Auth::user();
-        
+
         $request->validate([
             'n8n_base_url' => 'required|url',
             'n8n_path' => 'nullable|string',
@@ -65,12 +66,11 @@ class MerchantController extends Controller
     public function sendTestWebhook(Request $request)
     {
         $merchant = Auth::user();
-        
+
         if (!$merchant->n8n_base_url) {
             return back()->with('error', 'Please configure your n8n URL first.');
         }
 
-        // Create a test webhook event
         $testEvent = WebhookEvent::create([
             'salla_event' => 'order.created',
             'salla_event_id' => 'test_' . time(),
@@ -92,23 +92,24 @@ class MerchantController extends Controller
             'status' => 'stored',
         ]);
 
-        // Forward the test event
         $success = $this->forwarder->forward($testEvent, $merchant);
 
         if ($success) {
             return back()->with('success', 'Test webhook sent successfully!');
-        } else {
-            return back()->with('error', 'Failed to send test webhook. Check your n8n configuration.');
         }
+
+        return back()->with('error', 'Failed to send test webhook. Check your n8n configuration.');
     }
 
     public function webhooks(Request $request)
     {
         $merchant = Auth::user();
-        
-        $webhooks = WebhookEvent::where('salla_merchant_id', $merchant->salla_merchant_id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+
+        $webhooks = WebhookEvent::query()
+            ->where('salla_merchant_id', $merchant->salla_merchant_id)
+            ->orderByDesc('created_at')
+            ->limit(100)
+            ->get();
 
         return view('merchant.webhooks', compact('webhooks'));
     }
@@ -116,9 +117,9 @@ class MerchantController extends Controller
     public function actionsAudit(Request $request)
     {
         $merchant = Auth::user();
-        
+
         $actions = SallaActionAudit::where('merchant_id', $merchant->id)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->paginate(20);
 
         return view('merchant.actions-audit', compact('actions'));
