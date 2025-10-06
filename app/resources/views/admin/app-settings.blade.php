@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'App Settings')
 
@@ -63,21 +63,22 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/80 px-4 py-4">
-                    <div>
-                        <p class="text-sm font-medium text-slate-200">ALLOW_TEST_MODE</p>
-                        <p class="text-xs text-slate-400">Permit merchants to trigger test webhooks from the dashboard UI.</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="hidden" name="allow_test_mode" value="0">
-                        <label class="inline-flex cursor-pointer items-center">
-                            <input type="checkbox" name="allow_test_mode" value="1" class="peer sr-only"
-                                   {{ old('allow_test_mode', $settings['ALLOW_TEST_MODE'] ?? '0') == '1' ? 'checked' : '' }}>
-                            <div class="relative h-6 w-11 rounded-full bg-slate-700 transition peer-checked:bg-indigo-500">
-                                <span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
-                            </div>
-                        </label>
-                    </div>
+                <div class="mt-4">
+                    <label for="allow_test_mode" class="block text-sm font-medium text-slate-300 mb-2">
+                        ALLOW_TEST_MODE
+                    </label>
+                    <p class="text-xs text-slate-500 mb-2">Permit merchants to trigger test webhooks from the dashboard UI.</p>
+
+                    <input type="hidden" name="allow_test_mode" value="0">
+                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input type="checkbox" id="allow_test_mode" name="allow_test_mode" value="1"
+                            class="sr-only peer"
+                            {{ old('allow_test_mode', $settings['ALLOW_TEST_MODE'] ?? '0') == '1' ? 'checked' : '' }}>
+
+                        <div class="w-11 h-6 bg-slate-600 rounded-full peer-focus:ring-2 peer-focus:ring-sky-400 peer-checked:bg-sky-500 transition-colors duration-300"></div>
+
+                        <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 peer-checked:translate-x-5"></span>
+                    </label>
                 </div>
 
                 <div class="flex items-center justify-end gap-4">
