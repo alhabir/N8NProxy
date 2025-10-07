@@ -11,9 +11,15 @@ class AdminOnly
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check() || !Auth::user()->is_admin) {
-            abort(403, 'Admin access required');
+        Auth::shouldUse('admin');
+
+        $user = Auth::guard('admin')->user();
+
+        if (!$user || !$user->is_admin) {
+            return redirect()->guest(route('admin.login'));
         }
+
+        $request->setUserResolver(fn () => $user);
 
         return $next($request);
     }

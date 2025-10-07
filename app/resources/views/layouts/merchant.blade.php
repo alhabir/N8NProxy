@@ -20,7 +20,7 @@
         <a href="{{ route('webhooks') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('webhooks') ? 'bg-slate-800 text-white' : '' }}">Webhooks</a>
         <a href="{{ route('actions-audit') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('actions-audit') ? 'bg-slate-800 text-white' : '' }}">Actions Audit</a>
         <a href="{{ route('settings.n8n') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('settings.*') ? 'bg-slate-800 text-white' : '' }}">Settings</a>
-        @auth
+        @auth('web')
         <form method="POST" action="{{ route('logout') }}" class="inline ml-2">
             @csrf
             <button type="submit" class="px-3 py-1.5 rounded-md bg-indigo-500 text-white hover:bg-indigo-400 transition">

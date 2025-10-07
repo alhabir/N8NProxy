@@ -39,6 +39,12 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+            'remember' => 'merchant_remember_token',
+        ],
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'users',
+            'remember' => 'admin_remember_token',
         ],
     ],
 
