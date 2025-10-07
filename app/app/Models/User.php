@@ -47,4 +47,9 @@ class User extends Authenticatable
             'is_admin' => 'boolean',
         ];
     }
+
+    public function merchant()
+    {
+        return $this->hasOne(Merchant::class);
+    }
 }

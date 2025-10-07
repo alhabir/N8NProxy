@@ -20,9 +20,9 @@ it('stores and forwards happy path order.created', function () {
     $merchant = Merchant::create([
         'store_id' => 'store-112233',
         'email' => 'merchant112233@example.com',
-        'password' => bcrypt('secret'),
         'salla_merchant_id' => '112233',
         'n8n_base_url' => 'https://example.com',
+        'n8n_webhook_path' => '/webhook/salla',
         'is_active' => true,
     ]);
 
@@ -41,6 +41,8 @@ it('stores and forwards happy path order.created', function () {
     $res->assertOk();
     $res->assertJson(['status' => 'sent']);
     expect(WebhookEvent::count())->toBe(1);
+    $stored = WebhookEvent::first();
+    expect($stored->merchant_id)->toBe($merchant->id);
 });
 
 it('rejects invalid signature without storing event', function () {

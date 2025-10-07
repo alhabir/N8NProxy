@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Merchant;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -40,6 +41,16 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        Merchant::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'store_name' => $request->name,
+                'email' => $user->email,
+                'is_active' => true,
+                'is_approved' => false,
+            ]
+        );
 
         event(new Registered($user));
 

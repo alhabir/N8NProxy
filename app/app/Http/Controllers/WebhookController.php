@@ -51,8 +51,11 @@ class WebhookController extends Controller
             ], 401);
         }
 
-        // Store webhook event
+        // Find merchant and store webhook event
+        $merchant = Merchant::where('salla_merchant_id', $merchantId)->first();
+
         $webhookEvent = WebhookEvent::create([
+            'merchant_id' => $merchant?->id,
             'salla_event' => $event,
             'salla_event_id' => $eventId,
             'salla_merchant_id' => $merchantId,
@@ -60,9 +63,6 @@ class WebhookController extends Controller
             'payload' => $payload,
             'status' => 'stored',
         ]);
-
-        // Find merchant and forward
-        $merchant = Merchant::where('salla_merchant_id', $merchantId)->first();
         
         if ($merchant && $merchant->is_active && $merchant->is_approved) {
             $this->forwarder->forward($webhookEvent, $merchant);

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Merchant;
 use App\Models\MerchantToken;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -51,6 +52,7 @@ class SallaAppEventsTest extends TestCase
         $this->assertNotNull($merchant);
         $this->assertEquals('My Test Store', $merchant->store_name);
         $this->assertTrue($merchant->is_active);
+        $this->assertNotNull($merchant->user_id);
 
         // Verify token was stored
         $token = MerchantToken::where('salla_merchant_id', '789456')->first();
@@ -66,13 +68,20 @@ class SallaAppEventsTest extends TestCase
      */
     public function test_app_store_authorize_updates_existing_merchant(): void
     {
+        $user = User::factory()->create([
+            'email' => 'existing789456@example.com',
+            'name' => 'Old Store Name',
+        ]);
+
         // Create existing merchant
         $merchant = Merchant::create([
             'store_id' => 'store-789456',
-            'email' => 'existing789456@example.com',
-            'password' => bcrypt('secret'),
+            'user_id' => $user->id,
+            'email' => $user->email,
             'salla_merchant_id' => '789456',
             'store_name' => 'Old Store Name',
+            'n8n_base_url' => 'https://example.com',
+            'n8n_webhook_path' => '/webhook/salla',
             'is_active' => true,
         ]);
 
@@ -93,7 +102,7 @@ class SallaAppEventsTest extends TestCase
 
         $response = $this->postJson('/app-events/authorized', $payload);
 
-        $response->assertStatus(200);
+        $response->assertStatus(200)->assertJson(['ok' => true]);
 
         // Verify merchant was updated
         $merchant->refresh();
@@ -149,7 +158,7 @@ class SallaAppEventsTest extends TestCase
 
         $response = $this->postJson('/app-events/authorized', $payload);
 
-        $response->assertStatus(400)
+        $response->assertStatus(422)
             ->assertJson(['error' => 'Missing required data']);
     }
 }

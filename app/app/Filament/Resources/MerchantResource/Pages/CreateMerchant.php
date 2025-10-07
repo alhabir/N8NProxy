@@ -8,6 +8,10 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateMerchant extends CreateRecord
 {
     protected static string $resource = MerchantResource::class;
-}
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return MerchantResource::normalizeFormData($data);
+    }
+}
 

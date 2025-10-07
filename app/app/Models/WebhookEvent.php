@@ -14,6 +14,7 @@ class WebhookEvent extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'merchant_id',
         'salla_event',
         'salla_event_id',
         'salla_merchant_id',
@@ -42,5 +43,10 @@ class WebhookEvent extends Model
     public function forwardingAttempts()
     {
         return $this->hasMany(ForwardingAttempt::class);
+    }
+
+    public function merchant()
+    {
+        return $this->belongsTo(Merchant::class);
     }
 }

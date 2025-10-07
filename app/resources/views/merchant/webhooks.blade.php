@@ -4,22 +4,29 @@
 
 @section('content')
     <div class="space-y-8">
-        <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-                <h1 class="text-3xl font-semibold text-white">Webhook Activity</h1>
-                <p class="text-sm text-slate-400">Latest webhook deliveries sent from Salla to your integration (max 100).</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('dashboard') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/70 transition">Back to dashboard</a>
-                <form method="POST" action="{{ route('tests.send-webhook') }}">
-                    @csrf
-                    <button type="submit" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 transition">
-                        Send test webhook
-                    </button>
-                </form>
-            </div>
-        </div>
 
+
+<div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <div>
+        <h1 class="text-3xl font-semibold text-white">Webhook Activity</h1>
+        <p class="text-sm text-slate-400">Latest webhook deliveries sent from Salla to your integration (max 100).</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <a href="{{ route('dashboard') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/70 transition">Back to dashboard</a>
+        @if(!$allowTestMode)
+            <span class="text-xs text-slate-500">Test mode disabled by admin.</span>
+        @elseif(!$merchant->n8n_base_url)
+            <a href="{{ route('settings.n8n') }}" class="text-xs text-slate-400 underline decoration-dotted underline-offset-4 hover:text-slate-200">Configure n8n URL to enable tests</a>
+        @else
+            <form method="POST" action="{{ route('tests.send-webhook') }}">
+                @csrf
+                <button type="submit" class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 transition">
+                    Send test webhook
+                </button>
+            </form>
+        @endif
+    </div>
+</div>
         <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-xl">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-800 text-left text-sm">

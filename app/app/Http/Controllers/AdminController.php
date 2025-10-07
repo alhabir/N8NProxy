@@ -143,8 +143,9 @@ class AdminController extends Controller
         }
 
         $testEvent = WebhookEvent::create([
+            'merchant_id' => $merchant->id,
             'salla_event' => 'order.created',
-            'salla_event_id' => 'admin_test_' . time(),
+            'salla_event_id' => 'admin_test_' . now()->timestamp,
             'salla_merchant_id' => $merchant->salla_merchant_id,
             'headers' => ['X-Test' => 'true', 'X-Admin-Test' => 'true'],
             'payload' => [

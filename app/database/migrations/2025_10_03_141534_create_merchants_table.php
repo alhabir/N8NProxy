@@ -14,16 +14,14 @@ return new class extends Migration
         Schema::create('merchants', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('store_id')->unique()->nullable();
-            $table->string('email')->unique();
-            $table->string('password');
-            $table->string('salla_merchant_id')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('email')->nullable()->unique();
+            $table->string('salla_merchant_id')->nullable()->index();
             $table->string('store_name')->nullable();
             $table->string('n8n_base_url')->nullable();
-            $table->string('n8n_path')->nullable();
-            $table->enum('n8n_auth_type', ['none','bearer','basic'])->default('none');
-            $table->text('n8n_bearer_token')->nullable();
-            $table->string('n8n_basic_user')->nullable();
-            $table->text('n8n_basic_pass')->nullable();
+            $table->string('n8n_webhook_path')->nullable();
+            $table->string('n8n_auth_type')->default('none');
+            $table->text('n8n_auth_token')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_approved')->default(false);
             $table->timestamp('last_ping_ok_at')->nullable();

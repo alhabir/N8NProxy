@@ -71,7 +71,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     @if($merchant->n8n_base_url)
-                                        <div class="text-sm">{{ $merchant->n8n_base_url }}{{ $merchant->n8n_path }}</div>
+                                        <div class="text-sm">{{ $merchant->n8n_base_url }}{{ $merchant->n8n_webhook_path ?? '/webhook/salla' }}</div>
                                         <div class="text-xs text-gray-500">{{ ucfirst($merchant->n8n_auth_type) }} auth</div>
                                     @else
                                         <span class="text-sm text-gray-500">Not configured</span>

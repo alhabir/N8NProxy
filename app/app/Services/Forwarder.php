@@ -12,7 +12,7 @@ class Forwarder
     public function forward(WebhookEvent $event, Merchant $merchant): array
     {
         $base = rtrim($merchant->n8n_base_url, '/');
-        $path = '/'.ltrim($merchant->n8n_path ?? '/webhook/salla', '/');
+        $path = '/'.ltrim($merchant->n8n_webhook_path ?? '/webhook/salla', '/');
         $url = $base.$path;
 
         $payload = $event->payload;
@@ -28,10 +28,17 @@ class Forwarder
             'X-Event-Checksum' => $checksum,
         ];
 
-        if ($merchant->n8n_auth_type === 'bearer' && $merchant->n8n_bearer_token) {
-            $headers['Authorization'] = 'Bearer '.$merchant->n8n_bearer_token;
-        } elseif ($merchant->n8n_auth_type === 'basic' && $merchant->n8n_basic_user !== null) {
-            $headers['Authorization'] = 'Basic '.base64_encode($merchant->n8n_basic_user.':'.$merchant->n8n_basic_pass);
+        if ($merchant->n8n_auth_type === 'bearer' && $merchant->n8n_auth_token) {
+            $headers['Authorization'] = 'Bearer '.$merchant->n8n_auth_token;
+        } elseif ($merchant->n8n_auth_type === 'basic' && $merchant->n8n_auth_token) {
+            $credentials = json_decode($merchant->n8n_auth_token, true);
+            if (
+                is_array($credentials)
+                && !empty($credentials['username'])
+                && array_key_exists('password', $credentials)
+            ) {
+                $headers['Authorization'] = 'Basic '.base64_encode($credentials['username'].':'.$credentials['password']);
+            }
         }
 
         $timeoutMs = (int) (env('FORWARD_DEFAULT_TIMEOUT_MS', 6000));
@@ -83,5 +90,4 @@ class Forwarder
         ];
     }
 }
-
 

@@ -13,13 +13,13 @@ class WebhookForwarder
     public function forward(WebhookEvent $event, Merchant $merchant): bool
     {
         $targetUrl = $this->buildTargetUrl($merchant);
-        
+
         if (!$targetUrl) {
             $this->logError($event, 'No target URL configured');
             return false;
         }
 
-        $headers = $this->buildHeaders($event);
+        $headers = $this->buildHeaders($event, $merchant);
         $payload = $event->payload;
 
         $startTime = microtime(true);
@@ -56,18 +56,18 @@ class WebhookForwarder
         }
 
         $baseUrl = rtrim($merchant->n8n_base_url, '/');
-        $path = $merchant->n8n_path ?: '/webhook/salla';
+        $path = $merchant->n8n_webhook_path ?: '/webhook/salla';
         $path = '/' . ltrim($path, '/');
 
         return $baseUrl . $path;
     }
 
-    private function buildHeaders(WebhookEvent $event): array
+    private function buildHeaders(WebhookEvent $event, Merchant $merchant): array
     {
         $payload = json_encode($event->payload);
         $checksum = hash('sha256', $payload);
 
-        return [
+        $headers = [
             'Content-Type' => 'application/json',
             'X-Forwarded-By' => 'n8n-ai-salla-proxy',
             'X-Salla-Event' => $event->salla_event,
@@ -75,6 +75,17 @@ class WebhookForwarder
             'X-Salla-Merchant-Id' => $event->salla_merchant_id,
             'X-Event-Checksum' => $checksum,
         ];
+
+        if ($merchant->n8n_auth_type === 'bearer' && $merchant->n8n_auth_token) {
+            $headers['Authorization'] = 'Bearer '.$merchant->n8n_auth_token;
+        } elseif ($merchant->n8n_auth_type === 'basic' && $merchant->n8n_auth_token) {
+            $credentials = $this->decodeBasicCredentials($merchant->n8n_auth_token);
+            if ($credentials) {
+                $headers['Authorization'] = 'Basic '.base64_encode($credentials['username'].':'.$credentials['password']);
+            }
+        }
+
+        return $headers;
     }
 
     private function logAttempt(WebhookEvent $event, string $targetUrl, int $status, string $body, float $duration): void
@@ -98,8 +109,29 @@ class WebhookForwarder
 
         Log::error('Webhook forwarding failed', [
             'event_id' => $event->id,
-            'merchant_id' => $event->salla_merchant_id,
+            'merchant_id' => $event->merchant_id,
             'error' => $error,
         ]);
+    }
+
+    private function decodeBasicCredentials(string $token): ?array
+    {
+        $decoded = json_decode($token, true);
+
+        if (!is_array($decoded)) {
+            return null;
+        }
+
+        $username = $decoded['username'] ?? null;
+        $password = $decoded['password'] ?? null;
+
+        if (!is_string($username) || !is_string($password) || $username === '' || $password === '') {
+            return null;
+        }
+
+        return [
+            'username' => $username,
+            'password' => $password,
+        ];
     }
 }
