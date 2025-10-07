@@ -17,7 +17,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [MerchantController::class, 'dashboard'])->name('dashboard');
     Route::get('/settings/n8n', [MerchantController::class, 'n8nSettings'])->name('settings.n8n');
     Route::post('/settings/n8n', [MerchantController::class, 'updateN8nSettings']);
-    Route::post('/tests/send-webhook', [MerchantController::class, 'sendTestWebhook']);
+    Route::post('/tests/send-webhook', [MerchantController::class, 'sendTestWebhook'])->name('tests.send-webhook');
     Route::get('/webhooks', [MerchantController::class, 'webhooks'])->name('webhooks');
     Route::get('/actions-audit', [MerchantController::class, 'actionsAudit'])->name('actions-audit');
 

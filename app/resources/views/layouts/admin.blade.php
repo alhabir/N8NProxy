@@ -21,8 +21,8 @@
         <a href="{{ route('admin.webhooks') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.webhooks') ? 'bg-slate-800 text-white' : '' }}">Webhooks</a>
         <a href="{{ route('admin.actions-audit') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.actions-audit') ? 'bg-slate-800 text-white' : '' }}">Actions Audit</a>
         <a href="{{ route('admin.app-settings') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.app-settings') ? 'bg-slate-800 text-white' : '' }}">Settings</a>
-        @auth
-        <form method="POST" action="{{ route('logout') }}" class="inline ml-2">
+        @auth('admin')
+        <form method="POST" action="{{ route('admin.logout') }}" class="inline ml-2">
             @csrf
             <button type="submit" class="px-3 py-1.5 rounded-md bg-indigo-500 text-white hover:bg-indigo-400 transition">
                 Logout
