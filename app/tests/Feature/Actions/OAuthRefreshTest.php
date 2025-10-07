@@ -4,6 +4,7 @@ namespace Tests\Feature\Actions;
 
 use App\Models\Merchant;
 use App\Models\MerchantToken;
+use App\Models\User;
 use App\Services\Salla\OAuthRefresher;
 use App\Services\Salla\OAuthTokenStore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,13 +43,21 @@ class OAuthRefreshTest extends TestCase
     public function test_token_refresh_updates_stored_tokens(): void
     {
         // Create merchant with expiring token
+        $user = User::factory()->create([
+            'email' => 'merchant111222@example.com',
+            'name' => 'Test Store',
+        ]);
+
         $merchant = Merchant::create([
             'store_id' => 'store-111222',
-            'email' => 'merchant111222@example.com',
-            'password' => bcrypt('secret'),
+            'user_id' => $user->id,
+            'email' => $user->email,
             'salla_merchant_id' => '111222',
             'store_name' => 'Test Store',
+            'n8n_base_url' => 'https://example.com',
+            'n8n_webhook_path' => '/webhook/salla',
             'is_active' => true,
+            'is_approved' => true,
         ]);
 
         MerchantToken::create([
@@ -88,13 +97,21 @@ class OAuthRefreshTest extends TestCase
      */
     public function test_token_needs_refresh_detection(): void
     {
+        $user = User::factory()->create([
+            'email' => 'merchant333444@example.com',
+            'name' => 'Test Store',
+        ]);
+
         $merchant = Merchant::create([
             'store_id' => 'store-333444',
-            'email' => 'merchant333444@example.com',
-            'password' => bcrypt('secret'),
+            'user_id' => $user->id,
+            'email' => $user->email,
             'salla_merchant_id' => '333444',
             'store_name' => 'Test Store',
+            'n8n_base_url' => 'https://example.com',
+            'n8n_webhook_path' => '/webhook/salla',
             'is_active' => true,
+            'is_approved' => true,
         ]);
 
         // Token expiring soon (less than 60 seconds)
@@ -108,13 +125,21 @@ class OAuthRefreshTest extends TestCase
 
         $this->assertTrue($this->tokenStore->needsRefresh($expiringToken));
 
+        $otherUser = User::factory()->create([
+            'email' => 'merchant555666@example.com',
+            'name' => 'Fresh Store',
+        ]);
+
         $otherMerchant = Merchant::create([
             'store_id' => 'store-555666',
-            'email' => 'merchant555666@example.com',
-            'password' => bcrypt('secret'),
+            'user_id' => $otherUser->id,
+            'email' => $otherUser->email,
             'salla_merchant_id' => '555666',
             'store_name' => 'Fresh Store',
+            'n8n_base_url' => 'https://example.com',
+            'n8n_webhook_path' => '/webhook/salla',
             'is_active' => true,
+            'is_approved' => true,
         ]);
 
         $freshToken = MerchantToken::create([

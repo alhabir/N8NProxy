@@ -4,6 +4,7 @@ namespace Tests\Feature\Actions;
 
 use App\Models\Merchant;
 use App\Models\MerchantToken;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -32,13 +33,21 @@ class OrdersControllerTest extends TestCase
      */
     private function createMerchantWithToken(): Merchant
     {
+        $user = User::factory()->create([
+            'email' => 'merchant123456@example.com',
+            'name' => 'Test Store',
+        ]);
+
         $merchant = Merchant::create([
             'store_id' => 'store-123456',
-            'email' => 'merchant123456@example.com',
-            'password' => bcrypt('secret'),
+            'user_id' => $user->id,
+            'email' => $user->email,
             'salla_merchant_id' => '123456',
             'store_name' => 'Test Store',
+            'n8n_base_url' => 'https://example.com',
+            'n8n_webhook_path' => '/webhook/salla',
             'is_active' => true,
+            'is_approved' => true,
         ]);
 
         MerchantToken::create([

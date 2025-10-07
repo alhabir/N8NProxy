@@ -9,6 +9,27 @@
             <div class="p-6 text-gray-900">
                 <h2 class="text-2xl font-bold mb-6">n8n Configuration</h2>
                 
+                @php
+                    $bearerToken = old('n8n_bearer_token');
+                    if ($bearerToken === null && $merchant->n8n_auth_type === 'bearer') {
+                        $bearerToken = $merchant->n8n_auth_token;
+                    }
+
+                    $basicUser = old('n8n_basic_user');
+                    $basicPass = old('n8n_basic_pass');
+                    if ($basicUser === null && $basicPass === null && $merchant->n8n_auth_type === 'basic' && $merchant->n8n_auth_token) {
+                        $decoded = json_decode($merchant->n8n_auth_token, true) ?? [];
+                        $basicUser = $decoded['username'] ?? '';
+                        $basicPass = $decoded['password'] ?? '';
+                    }
+                @endphp
+
+                @if(!$allowTestMode)
+                    <div class="mb-6 rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                        Test mode is currently disabled by the administrator. You can still save your configuration and request a test from the admin panel when enabled.
+                    </div>
+                @endif
+
                 <form method="POST" action="{{ route('settings.n8n') }}">
                     @csrf
                     
@@ -32,16 +53,16 @@
 
                     <!-- n8n Path -->
                     <div class="mb-6">
-                        <label for="n8n_path" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="n8n_webhook_path" class="block text-sm font-medium text-gray-700 mb-2">
                             Webhook Path
                         </label>
                         <input type="text" 
-                               id="n8n_path" 
-                               name="n8n_path" 
-                               value="{{ old('n8n_path', $merchant->n8n_path) }}"
+                               id="n8n_webhook_path" 
+                               name="n8n_webhook_path" 
+                               value="{{ old('n8n_webhook_path', $merchant->n8n_webhook_path) }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                placeholder="/webhook/salla">
-                        @error('n8n_path')
+                        @error('n8n_webhook_path')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                         <p class="mt-1 text-sm text-gray-500">The path where webhooks will be sent (default: /webhook/salla)</p>
@@ -73,7 +94,7 @@
                         <input type="password" 
                                id="n8n_bearer_token" 
                                name="n8n_bearer_token" 
-                               value="{{ old('n8n_bearer_token', $merchant->n8n_bearer_token) }}"
+                               value="{{ $bearerToken ?? '' }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                placeholder="Your bearer token">
                         @error('n8n_bearer_token')
@@ -92,7 +113,7 @@
                                 <input type="text" 
                                        id="n8n_basic_user" 
                                        name="n8n_basic_user" 
-                                       value="{{ old('n8n_basic_user', $merchant->n8n_basic_user) }}"
+                                       value="{{ $basicUser ?? '' }}"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                        placeholder="Username">
                                 @error('n8n_basic_user')
@@ -106,7 +127,7 @@
                                 <input type="password" 
                                        id="n8n_basic_pass" 
                                        name="n8n_basic_pass" 
-                                       value="{{ old('n8n_basic_pass', $merchant->n8n_basic_pass) }}"
+                                       value="{{ $basicPass ?? '' }}"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                                        placeholder="Password">
                                 @error('n8n_basic_pass')

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('salla_event')->index();
             $table->string('salla_event_id')->unique();
+            $table->foreignUuid('merchant_id')->nullable()->constrained('merchants')->nullOnDelete();
             $table->string('salla_merchant_id')->index();
             $table->json('headers');
             $table->json('payload');

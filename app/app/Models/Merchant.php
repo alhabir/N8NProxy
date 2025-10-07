@@ -14,17 +14,15 @@ class Merchant extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'user_id',
         'store_id',
-        'email',
-        'password',
         'salla_merchant_id',
         'store_name',
+        'email',
         'n8n_base_url',
-        'n8n_path',
+        'n8n_webhook_path',
         'n8n_auth_type',
-        'n8n_bearer_token',
-        'n8n_basic_user',
-        'n8n_basic_pass',
+        'n8n_auth_token',
         'is_active',
         'is_approved',
         'last_ping_ok_at',
@@ -34,9 +32,7 @@ class Merchant extends Model
         'is_active' => 'boolean',
         'is_approved' => 'boolean',
         'last_ping_ok_at' => 'datetime',
-        'n8n_bearer_token' => 'encrypted',
-        'n8n_basic_user' => 'encrypted',
-        'n8n_basic_pass' => 'encrypted',
+        'n8n_auth_token' => 'encrypted',
     ];
 
     protected static function boot()
@@ -52,6 +48,11 @@ class Merchant extends Model
     public function webhookEvents()
     {
         return $this->hasMany(WebhookEvent::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function token()

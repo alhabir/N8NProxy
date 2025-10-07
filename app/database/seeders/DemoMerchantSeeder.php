@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Merchant;
 use App\Models\MerchantToken;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DemoMerchantSeeder extends Seeder
 {
@@ -13,15 +15,26 @@ class DemoMerchantSeeder extends Seeder
      */
     public function run(): void
     {
+        $user = User::firstOrCreate(
+            ['email' => 'demo-merchant@example.com'],
+            [
+                'name' => 'Demo Merchant',
+                'password' => Hash::make('password'),
+            ]
+        );
+
         // Create demo merchant
-        $merchant = Merchant::firstOrCreate(
+        $merchant = Merchant::updateOrCreate(
             ['salla_merchant_id' => '112233'],
             [
+                'user_id' => $user->id,
                 'store_name' => 'Demo Store for Testing',
+                'email' => $user->email,
                 'n8n_base_url' => 'http://localhost:5678',
-                'n8n_path' => '/webhook/salla-proxy',
+                'n8n_webhook_path' => '/webhook/salla-proxy',
                 'n8n_auth_type' => 'none',
                 'is_active' => true,
+                'is_approved' => true,
             ]
         );
 
