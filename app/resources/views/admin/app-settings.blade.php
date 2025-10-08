@@ -10,7 +10,7 @@
         </div>
 
         <div class="rounded-xl border border-slate-800 bg-slate-900/60 shadow-xl">
-            <form method="POST" action="{{ route('admin.app-settings') }}" class="p-6 space-y-8">
+            <form method="POST" action="{{ route('admin.app-settings.update') }}" class="p-6 space-y-8">
                 @csrf
 
                 <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">

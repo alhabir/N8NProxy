@@ -74,6 +74,7 @@ class SallaWebhookController extends Controller
         $event = WebhookEvent::create([
             'salla_event' => (string) $eventName,
             'salla_event_id' => (string) $sallaEventId,
+            'merchant_id' => $merchant?->id,
             'salla_merchant_id' => (string) $merchantId,
             'headers' => $headers,
             'payload' => $payload,

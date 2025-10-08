@@ -97,6 +97,10 @@ class MerchantController extends Controller
 
         $merchant = $this->currentMerchant();
 
+        if (! $merchant->is_approved) {
+            return back()->with('warning', 'Your account must be approved before sending test webhooks.');
+        }
+
         if (! $merchant->n8n_base_url) {
             return back()->with('warning', 'Please configure your n8n URL first.');
         }
@@ -160,7 +164,7 @@ class MerchantController extends Controller
 
     private function currentMerchant()
     {
-        $user = Auth::user();
+        $user = Auth::guard('merchant')->user();
 
         $merchant = $user?->merchant;
 

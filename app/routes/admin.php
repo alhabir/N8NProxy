@@ -29,8 +29,9 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::get('/', [AdminController::class, 'index'])->name('index');
     Route::get('/merchants', [AdminController::class, 'merchants'])->name('merchants');
     Route::post('/merchants/{merchant}/approve', [AdminController::class, 'approveMerchant'])->name('merchants.approve');
+    Route::delete('/merchants/{merchant}', [AdminController::class, 'destroyMerchant'])->name('merchants.destroy');
     Route::get('/app-settings', [AdminController::class, 'appSettings'])->name('app-settings');
-    Route::post('/app-settings', [AdminController::class, 'appSettingsSave']);
+    Route::post('/app-settings', [AdminController::class, 'appSettingsSave'])->name('app-settings.update');
     Route::get('/webhooks', [AdminController::class, 'webhooks'])->name('webhooks');
     Route::get('/actions-audit', [AdminController::class, 'actionsAudit'])->name('actions-audit');
     Route::post('/tests/send-webhook/{merchant}', [AdminController::class, 'sendTestWebhook'])->name('tests.send-webhook');
