@@ -46,6 +46,12 @@
         </div>
     @endif
 
+    @if(session('warning'))
+        <div class="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            {{ session('warning') }}
+        </div>
+    @endif
+
     @if($errors->any())
         <div class="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
             <p class="font-medium">There were some problems with your submission:</p>

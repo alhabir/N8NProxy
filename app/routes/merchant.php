@@ -13,7 +13,7 @@ Route::get('/docs/merchant', [DocsController::class, 'merchant']);
 
 require __DIR__.'/auth.php';
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth:merchant', 'verified:merchant'])->group(function () {
     Route::get('/dashboard', [MerchantController::class, 'dashboard'])->name('dashboard');
     Route::get('/settings/n8n', [MerchantController::class, 'n8nSettings'])->name('settings.n8n');
     Route::post('/settings/n8n', [MerchantController::class, 'updateN8nSettings']);

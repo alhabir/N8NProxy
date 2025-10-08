@@ -90,27 +90,30 @@ class AdminController extends Controller
             'forward_default_timeout_ms' => ['required', 'integer', 'min:100', 'max:120000'],
             'forward_sync_retries' => ['required', 'integer', 'min:0', 'max:10'],
             'forward_retry_schedule_max_attempts' => ['required', 'integer', 'min:0', 'max:50'],
-            'allow_test_mode' => ['boolean'],
+            'allow_test_mode' => ['nullable', 'in:0,1,on,true,false'],
         ]);
 
-        $validated['allow_test_mode'] = $request->boolean('allow_test_mode');
-
-        $mapping = [
-            'actions_api_bearer' => 'ACTIONS_API_BEARER',
-            'forward_default_timeout_ms' => 'FORWARD_DEFAULT_TIMEOUT_MS',
-            'forward_sync_retries' => 'FORWARD_SYNC_RETRIES',
-            'forward_retry_schedule_max_attempts' => 'FORWARD_RETRY_SCHEDULE_MAX_ATTEMPTS',
-            'allow_test_mode' => 'ALLOW_TEST_MODE',
+        $updates = [
+            'ACTIONS_API_BEARER' => $validated['actions_api_bearer'] ?? null,
+            'FORWARD_DEFAULT_TIMEOUT_MS' => (string) ($validated['forward_default_timeout_ms'] ?? 5000),
+            'FORWARD_SYNC_RETRIES' => (string) ($validated['forward_sync_retries'] ?? 0),
+            'FORWARD_RETRY_SCHEDULE_MAX_ATTEMPTS' => (string) ($validated['forward_retry_schedule_max_attempts'] ?? 0),
+            'ALLOW_TEST_MODE' => $request->boolean('allow_test_mode') ? '1' : '0',
         ];
 
-        foreach ($mapping as $input => $key) {
-            $value = $validated[$input] ?? null;
-
-            if ($input === 'allow_test_mode') {
-                $value = $value ? '1' : '0';
+        try {
+            foreach ($updates as $key => $value) {
+                AppSetting::query()->updateOrCreate(
+                    ['key' => $key],
+                    ['value' => $value]
+                );
             }
+        } catch (\Throwable $exception) {
+            report($exception);
 
-            AppSetting::set($key, $value);
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update application settings. Please try again.');
         }
 
         return back()->with('success', 'App settings updated successfully.');
@@ -134,6 +137,19 @@ class AdminController extends Controller
             ->get();
 
         return view('admin.actions-audit', ['audits' => $audits]);
+    }
+
+    public function destroyMerchant(Request $request, Merchant $merchant)
+    {
+        if ($merchant->trashed()) {
+            return back()->with('warning', 'Merchant has already been deleted.');
+        }
+
+        $storeName = $merchant->store_name ?? $merchant->email ?? $merchant->id;
+
+        $merchant->delete();
+
+        return back()->with('success', "Merchant {$storeName} deleted successfully.");
     }
 
     public function sendTestWebhook(Request $request, Merchant $merchant)

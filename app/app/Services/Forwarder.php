@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Merchant;
 use App\Models\WebhookEvent;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class Forwarder
@@ -48,6 +49,13 @@ class Forwarder
         $lastError = null;
         $response = null;
 
+        Log::info('Webhook forwarding attempt queued', [
+            'event_id' => $event->id,
+            'merchant_id' => $merchant->id,
+            'target_url' => $url,
+            'auth_type' => $merchant->n8n_auth_type,
+        ]);
+
         while ($attempts <= $retries) {
             $attempts++;
             try {
@@ -58,6 +66,12 @@ class Forwarder
 
                 $status = $response->status();
                 if ($status >= 200 && $status < 300) {
+                    Log::info('Webhook forwarding succeeded', [
+                        'event_id' => $event->id,
+                        'merchant_id' => $merchant->id,
+                        'target_url' => $url,
+                        'response_status' => $status,
+                    ]);
                     return [
                         'ok' => true,
                         'code' => $status,
@@ -67,6 +81,13 @@ class Forwarder
                 }
 
                 if (!in_array($status, [408, 429]) && $status < 500) {
+                    Log::warning('Webhook forwarding returned non-retryable status', [
+                        'event_id' => $event->id,
+                        'merchant_id' => $merchant->id,
+                        'target_url' => $url,
+                        'response_status' => $status,
+                        'response_body' => Str::limit($response->body(), 2000),
+                    ]);
                     return [
                         'ok' => false,
                         'code' => $status,
@@ -76,10 +97,34 @@ class Forwarder
                     ];
                 }
                 $lastError = 'retryable_status_'.$status;
+                Log::warning('Webhook forwarding retry scheduled', [
+                    'event_id' => $event->id,
+                    'merchant_id' => $merchant->id,
+                    'target_url' => $url,
+                    'response_status' => $status,
+                    'attempt' => $attempts,
+                ]);
             } catch (\Throwable $e) {
                 $lastError = 'network_exception: '.$e->getMessage();
+                Log::error('Webhook forwarding network exception', [
+                    'event_id' => $event->id,
+                    'merchant_id' => $merchant->id,
+                    'target_url' => $url,
+                    'error' => $e->getMessage(),
+                    'attempt' => $attempts,
+                ]);
             }
         }
+
+        Log::error('Webhook forwarding failed after retries', [
+            'event_id' => $event->id,
+            'merchant_id' => $merchant->id,
+            'target_url' => $url,
+            'error' => $lastError,
+            'response_status' => $response?->status(),
+            'response_body' => $response ? Str::limit($response->body(), 2000) : null,
+            'attempts' => $attempts,
+        ]);
 
         return [
             'ok' => false,
