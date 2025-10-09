@@ -51,6 +51,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function merchant()
     {
-        return $this->hasOne(Merchant::class);
+        return $this->hasOne(Merchant::class, 'claimed_by_user_id');
     }
 }

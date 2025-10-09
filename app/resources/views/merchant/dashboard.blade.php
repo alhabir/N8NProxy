@@ -19,6 +19,53 @@
             </div>
         @endif
 
+        @if (! $connection['has_tokens'])
+            <div class="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-6 py-4 text-indigo-100">
+                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold uppercase tracking-wide">Connect Your Salla Store</p>
+                        <p class="mt-1 text-sm text-indigo-100/80">
+                            Authorize the app inside Salla and claim the store to start forwarding events and using the Actions API.
+                        </p>
+                    </div>
+                    <a href="{{ route('settings.connect-salla') }}"
+                       class="inline-flex items-center rounded-lg border border-indigo-400/50 px-4 py-2 text-sm font-medium text-indigo-50 transition hover:bg-indigo-500/20">
+                        Connect Salla Store
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        <div class="grid gap-4 sm:grid-cols-3">
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow shadow-slate-950/30">
+                <p class="text-xs uppercase tracking-wide text-slate-400">Salla Authorization</p>
+                <p class="mt-2 text-xl font-semibold {{ $connection['has_tokens'] ? 'text-emerald-300' : 'text-amber-200' }}">
+                    {{ $connection['has_tokens'] ? 'Connected' : 'Pending' }}
+                </p>
+                <p class="mt-1 text-xs text-slate-400">
+                    {{ $connection['has_tokens'] ? 'Tokens received from Salla' : 'Install & authorize the app in Salla' }}
+                </p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow shadow-slate-950/30">
+                <p class="text-xs uppercase tracking-wide text-slate-400">Account Claim</p>
+                <p class="mt-2 text-xl font-semibold {{ $connection['is_claimed'] ? 'text-emerald-300' : 'text-amber-200' }}">
+                    {{ $connection['is_claimed'] ? 'Linked' : 'Not Linked' }}
+                </p>
+                <p class="mt-1 text-xs text-slate-400">
+                    {{ $connection['is_claimed'] ? 'Store linked to this login' : 'Claim your store after authorizing in Salla' }}
+                </p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow shadow-slate-950/30">
+                <p class="text-xs uppercase tracking-wide text-slate-400">Actions API</p>
+                <p class="mt-2 text-xl font-semibold {{ $connection['actions_ready'] ? 'text-emerald-300' : 'text-slate-200' }}">
+                    {{ $connection['actions_ready'] ? 'Ready' : 'Awaiting Tokens' }}
+                </p>
+                <p class="mt-1 text-xs text-slate-400">
+                    {{ $connection['actions_ready'] ? 'Use n8n to call Salla APIs' : 'Complete Salla authorization first' }}
+                </p>
+            </div>
+        </div>
+
         <div class="grid gap-4 md:grid-cols-2">
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow shadow-slate-950/30">
                 <div class="flex items-center justify-between">
@@ -103,16 +150,16 @@
                         <button
                             type="submit"
                             class="rounded-lg bg-indigo-500 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
-                            @disabled(! $allowTestMode || ! $merchant->n8n_base_url || ! $merchant->is_approved)
+                            @disabled(! $allowTestMode || ! $merchant->n8n_base_url || ! $merchant->is_approved || ! $connection['has_tokens'])
                         >
                             Send Test Webhook
                         </button>
                     </form>
                 </div>
             </div>
-            @if (! $allowTestMode || ! $merchant->n8n_base_url || ! $merchant->is_approved)
+            @if (! $allowTestMode || ! $merchant->n8n_base_url || ! $merchant->is_approved || ! $connection['has_tokens'])
                 <p class="mt-3 text-xs text-slate-400">
-                    Test webhook requires: admin test mode enabled, your n8n URL configured, and an approved account.
+                    Test webhook requires: admin test mode enabled, your n8n URL configured, an approved account, and a connected Salla store.
                 </p>
             @endif
         </div>

@@ -23,11 +23,15 @@ class WebhookEvent extends Model
         'status',
         'attempts',
         'last_error',
+        'response_status',
+        'response_body_excerpt',
+        'forwarded_at',
     ];
 
     protected $casts = [
         'headers' => 'array',
         'payload' => 'array',
+        'forwarded_at' => 'datetime',
     ];
 
     protected static function boot()

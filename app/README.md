@@ -21,7 +21,8 @@ SALLA_CLIENT_ID=a5500786-2c22-4ca2-bab9-4cc6e0cd4906
 SALLA_CLIENT_SECRET=f9b1a18cec45ac342bb9cf7bfd45ac73
 
 # Webhook validation
-SALLA_WEBHOOK_SECRET=519dd95fbd631b78020de2e36ae116c3
+SALLA_WEBHOOK_MODE=token
+SALLA_WEBHOOK_TOKEN=519dd95fbd631b78020de2e36ae116c3
 
 # Salla Admin API Base (override if needed)
 SALLA_API_BASE=https://api.salla.dev/admin/v2
@@ -55,18 +56,17 @@ Update `ADMIN_APP_URL`, `MERCHANT_APP_URL`, and `SESSION_DOMAIN` in your `.env` 
 
 ## Config
 `config/salla.php`:
-- `signature_header`: `X-Salla-Signature`
-- dot-paths: `merchant_id = data.store.id`, `event_name = event`, `event_id = id`
-- `supported_events`: Order + Customer; append strings to extend
-- optional `paths_overrides` per event prefix (e.g., `product.*`)
+- `webhook.mode` / `webhook.token` â€” toggle & validate the `X-Webhook-Token` header (or `?token=` query)
+- `headers.event|event_id|merchant` â€” header names used to resolve event metadata (falls back to payload)
+- `events.app_prefix` â€” any event starting with this prefix is treated as an "app" event (tokens, install/uninstall)
+- `forwarding.forwarded_by` / `forwarding.merchant_header` â€” identification headers added when sending to n8n
 
 ## Routes
 
 All admin/webhook/API traffic is served from **`https://app.n8ndesigner.com`**. Merchant self-service pages render on **`https://merchant.n8ndesigner.com`**.
 
 ### Webhooks (app.n8ndesigner.com)
-- `POST /webhooks/salla` — main webhook ingest
-- `POST /app-events/authorized` — capture OAuth tokens from Salla app events
+- `POST /webhooks/salla/app-events` — unified endpoint for Salla app + store events (secured by `X-Webhook-Token`)
 
 ### Merchant Panel (merchant.n8ndesigner.com)
 - `GET /` — landing / marketing page
@@ -118,13 +118,13 @@ All actions endpoints require `Authorization: Bearer {ACTIONS_API_BEARER}` with 
 - `GET /exports/download` — Download export file
 
 ## Flow
-1) Verify signature: base64(hmac-sha256(raw_body, `SALLA_WEBHOOK_SECRET`)) in header `X-Salla-Signature`.
-2) Extract event, event id, merchant id via config dot-paths.
-3) Upsert `merchants` by `salla_merchant_id` (inactive placeholder if new).
-4) Idempotent insert into `webhook_events` by `salla_event_id` (fallback sha256(headers+raw)).
-5) Skip if signature invalid, merchant inactive, or missing n8n URL.
-6) Forward synchronously to merchant n8n with headers and inline retry (5xx/408/429/network).
-7) Store response, attempts, status for retries and debugging.
+1) Verify the shared webhook token (`X-Webhook-Token` header or `?token=`) when `SALLA_WEBHOOK_MODE=token`.
+2) Resolve the event name, event id, and merchant id from headers (falls back to payload fields).
+3) `app.*` events (authorize/install/uninstall) update the merchant row, persist OAuth tokens, and flag connection status.
+4) `store` events insert into `webhook_events` idempotently by `salla_event_id` (hash fallback when missing).
+5) Skip forwarding when merchant is missing, inactive, unapproved, or lacks an n8n target.
+6) Forward synchronously to the merchant's n8n URL with enriched headers and retry-once semantics (5xx/408/429/network).
+7) Record response status/body excerpts plus attempts for visibility and retry tooling.
 
 ## Scheduled Retry
 Command: `webhooks:retry-failed`
@@ -164,16 +164,18 @@ Fixtures:
 
 Local cURL example:
 ```
-RAW=$(cat tests/Fixtures/salla/order.created.json)
-SIG=$(php -r 'echo base64_encode(hash_hmac("sha256", file_get_contents("php://stdin"), getenv("SALLA_WEBHOOK_SECRET"), true));' <<< "$RAW")
-curl -sS -X POST http://localhost:8000/webhooks/salla \
+PAYLOAD=$(cat tests/Fixtures/salla/order.created.json)
+curl -sS -X POST http://localhost:8000/webhooks/salla/app-events \
   -H "Content-Type: application/json" \
-  -H "X-Salla-Signature: $SIG" \
-  --data "$RAW"
+  -H "X-Webhook-Token: $SALLA_WEBHOOK_TOKEN" \
+  -H "X-Salla-Event: order.created" \
+  -H "X-Salla-Event-Id: local-example" \
+  -H "X-Salla-Merchant-Id: 112233" \
+  --data "$PAYLOAD"
 ```
 
 ## Extending Supported Events
-Add strings to `config('salla.supported_events')`. For different merchant id paths per model, define `paths_overrides` like:
+Store events are forwarded as-is; adjust application logic inside `SallaWebhookController` if you need custom handling per event family:
 
 ```
 'paths_overrides' => [
@@ -363,7 +365,7 @@ In n8n, use the HTTP Request node with these settings:
 1. Set strong values for:
    - `ACTIONS_API_BEARER`
    - `SALLA_CLIENT_SECRET`
-   - `SALLA_WEBHOOK_SECRET`
+   - `SALLA_WEBHOOK_TOKEN`
 
 2. Configure proper Salla OAuth credentials
 
@@ -396,3 +398,6 @@ In n8n, use the HTTP Request node with these settings:
 - Check `salla_action_audits` table for details
 - Verify API endpoints in `config/salla_api.php`
 - Check Salla API documentation for payload requirements
+
+
+

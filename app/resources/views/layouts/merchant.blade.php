@@ -19,7 +19,8 @@
         <a href="{{ route('dashboard') }}" class="px-3 py-1.5 rounded-md text-slate-300 transition hover:bg-slate-800/70 hover:text-white {{ request()->routeIs('dashboard') ? 'bg-slate-800 text-white' : '' }}">Dashboard</a>
         <a href="{{ route('webhooks') }}" class="px-3 py-1.5 rounded-md text-slate-300 transition hover:bg-slate-800/70 hover:text-white {{ request()->routeIs('webhooks') ? 'bg-slate-800 text-white' : '' }}">Webhooks</a>
         <a href="{{ route('actions-audit') }}" class="px-3 py-1.5 rounded-md text-slate-300 transition hover:bg-slate-800/70 hover:text-white {{ request()->routeIs('actions-audit') ? 'bg-slate-800 text-white' : '' }}">Actions Audit</a>
-        <a href="{{ route('settings.n8n') }}" class="px-3 py-1.5 rounded-md text-slate-300 transition hover:bg-slate-800/70 hover:text-white {{ request()->routeIs('settings.*') ? 'bg-slate-800 text-white' : '' }}">Settings</a>
+        <a href="{{ route('settings.connect-salla') }}" class="px-3 py-1.5 rounded-md text-slate-300 transition hover:bg-slate-800/70 hover:text-white {{ request()->routeIs('settings.connect-salla*') ? 'bg-slate-800 text-white' : '' }}">Connect Salla</a>
+        <a href="{{ route('settings.n8n') }}" class="px-3 py-1.5 rounded-md text-slate-300 transition hover:bg-slate-800/70 hover:text-white {{ request()->routeIs('settings.n8n') ? 'bg-slate-800 text-white' : '' }}">n8n Settings</a>
         @auth('merchant')
         <form method="POST" action="{{ route('logout') }}" class="ml-2 inline">
           @csrf

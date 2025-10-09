@@ -30,6 +30,13 @@
                     </div>
                 @endif
 
+                @if(!$connection['has_tokens'])
+                    <div class="mb-6 rounded-md border border-indigo-300 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+                        Connect and claim your Salla store before configuring n8n to ensure webhooks can be forwarded correctly.
+                        <a href="{{ route('settings.connect-salla') }}" class="ml-2 font-semibold underline hover:text-indigo-600">Go to Connect Salla</a>
+                    </div>
+                @endif
+
                 <form method="POST" action="{{ route('settings.n8n') }}">
                     @csrf
                     

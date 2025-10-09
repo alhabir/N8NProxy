@@ -180,9 +180,18 @@ class AdminController extends Controller
             'status' => 'stored',
         ]);
 
-        $success = $this->forwarder->forward($testEvent, $merchant);
+        $result = $this->forwarder->forward($testEvent, $merchant);
 
-        if ($success) {
+        $testEvent->forceFill([
+            'status' => $result['ok'] ? 'sent' : 'failed',
+            'response_status' => $result['code'],
+            'response_body_excerpt' => $result['body'],
+            'last_error' => $result['ok'] ? null : ($result['error'] ?? null),
+            'attempts' => ($testEvent->attempts ?? 0) + ($result['attempts'] ?? 1),
+            'forwarded_at' => now(),
+        ])->save();
+
+        if ($result['ok']) {
             return back()->with('success', "Test webhook sent to {$merchant->store_name} successfully!");
         }
 

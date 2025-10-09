@@ -72,6 +72,13 @@ class OAuthTokenStore
             throw new \Exception("Merchant not found for Salla ID: {$sallaMerchantId}");
         }
 
+        $merchant->forceFill([
+            'salla_access_token' => $accessToken,
+            'salla_refresh_token' => $refreshToken,
+            'salla_token_expires_at' => $expiresAt,
+            'connected_at' => $merchant->connected_at ?? now(),
+        ])->save();
+
         return MerchantToken::updateOrCreate(
             ['salla_merchant_id' => $sallaMerchantId],
             [

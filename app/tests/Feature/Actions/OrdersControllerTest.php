@@ -40,7 +40,7 @@ class OrdersControllerTest extends TestCase
 
         $merchant = Merchant::create([
             'store_id' => 'store-123456',
-            'user_id' => $user->id,
+            'claimed_by_user_id' => $user->id,
             'email' => $user->email,
             'salla_merchant_id' => '123456',
             'store_name' => 'Test Store',

@@ -188,7 +188,7 @@ ACTIONS_API_BEARER=<strong-random-token>
 
 ## 10. Salla Console Setup
 
-- **Webhook URL:** `https://app.n8ndesigner.com/webhooks/salla`
+- **Webhook URL:** `https://app.n8ndesigner.com/webhooks/salla/app-events`
 - **App Authorized URL:** `https://app.n8ndesigner.com/app-events/authorized`
 - **Webhook Secret:** `519dd95fbd631b78020de2e36ae116c3`
 - Ensure required scopes (Orders/Products/Customers/Marketing/Categories/Exports/Webhooks) are enabled.

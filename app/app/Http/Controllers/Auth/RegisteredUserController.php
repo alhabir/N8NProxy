@@ -62,7 +62,7 @@ class RegisteredUserController extends Controller
                 ->where('email', $validated['email'])
                 ->first();
 
-            if ($existingMerchant && $existingMerchant->user_id && $existingMerchant->user_id !== $user->id) {
+            if ($existingMerchant && $existingMerchant->claimed_by_user_id && $existingMerchant->claimed_by_user_id !== $user->id) {
                 throw ValidationException::withMessages([
                     'email' => __('This email is already associated with another merchant account.'),
                 ]);
@@ -78,12 +78,12 @@ class RegisteredUserController extends Controller
                     'is_active' => true,
                     'is_approved' => false,
                 ]);
-                $existingMerchant->user_id = $user->id;
+                $existingMerchant->claimed_by_user_id = $user->id;
                 $existingMerchant->email = $validated['email'];
                 $existingMerchant->save();
             } else {
                 Merchant::create([
-                    'user_id' => $user->id,
+                    'claimed_by_user_id' => $user->id,
                     'store_name' => $validated['name'],
                     'email' => $validated['email'],
                     'is_active' => true,

@@ -27,7 +27,7 @@ class DemoMerchantSeeder extends Seeder
         $merchant = Merchant::updateOrCreate(
             ['salla_merchant_id' => '112233'],
             [
-                'user_id' => $user->id,
+                'claimed_by_user_id' => $user->id,
                 'store_name' => 'Demo Store for Testing',
                 'email' => $user->email,
                 'n8n_base_url' => 'http://localhost:5678',
@@ -35,8 +35,15 @@ class DemoMerchantSeeder extends Seeder
                 'n8n_auth_type' => 'none',
                 'is_active' => true,
                 'is_approved' => true,
+                'connected_at' => now(),
             ]
         );
+
+        $merchant->update([
+            'salla_access_token' => $merchant->salla_access_token ?? 'demo_access_token_' . bin2hex(random_bytes(16)),
+            'salla_refresh_token' => $merchant->salla_refresh_token ?? 'demo_refresh_token_' . bin2hex(random_bytes(16)),
+            'salla_token_expires_at' => now()->addDays(30),
+        ]);
 
         // Create demo token (valid for 30 days)
         MerchantToken::updateOrCreate(

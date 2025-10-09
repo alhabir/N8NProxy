@@ -50,7 +50,7 @@ class OAuthRefreshTest extends TestCase
 
         $merchant = Merchant::create([
             'store_id' => 'store-111222',
-            'user_id' => $user->id,
+            'claimed_by_user_id' => $user->id,
             'email' => $user->email,
             'salla_merchant_id' => '111222',
             'store_name' => 'Test Store',
@@ -104,7 +104,7 @@ class OAuthRefreshTest extends TestCase
 
         $merchant = Merchant::create([
             'store_id' => 'store-333444',
-            'user_id' => $user->id,
+            'claimed_by_user_id' => $user->id,
             'email' => $user->email,
             'salla_merchant_id' => '333444',
             'store_name' => 'Test Store',
@@ -132,7 +132,7 @@ class OAuthRefreshTest extends TestCase
 
         $otherMerchant = Merchant::create([
             'store_id' => 'store-555666',
-            'user_id' => $otherUser->id,
+            'claimed_by_user_id' => $otherUser->id,
             'email' => $otherUser->email,
             'salla_merchant_id' => '555666',
             'store_name' => 'Fresh Store',

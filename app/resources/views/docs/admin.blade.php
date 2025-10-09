@@ -26,7 +26,7 @@
                     
                     <h3>Webhook Settings</h3>
                     <ul>
-                        <li><strong>Webhook URL:</strong> <code>{{ rtrim(config('panels.admin_url'), '/') }}/webhooks/salla</code></li>
+                        <li><strong>Webhook URL:</strong> <code>{{ rtrim(config('panels.admin_url'), '/') }}/webhooks/salla/app-events</code></li>
                         <li><strong>Security Strategy:</strong> Signature</li>
                         <li><strong>Webhook Secret:</strong> <code>519dd95fbd631b78020de2e36ae116c3</code></li>
                     </ul>
@@ -88,7 +88,7 @@
                     <ul>
                         <li><code>SALLA_CLIENT_ID:</code> Your Salla app client ID</li>
                         <li><code>SALLA_CLIENT_SECRET:</code> Your Salla app client secret</li>
-                        <li><code>SALLA_WEBHOOK_SECRET:</code> Webhook signature verification key</li>
+                        <li><code>SALLA_WEBHOOK_TOKEN:</code> Shared token used to validate incoming webhooks</li>
                         <li><code>ACTIONS_API_BEARER:</code> Bearer token for API authentication</li>
                     </ul>
                     
