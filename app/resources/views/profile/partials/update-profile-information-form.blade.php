@@ -39,9 +39,14 @@
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600 dark:text-green-400">
-                            {{ __('A new verification link has been sent to your email address.') }}
-                        </p>
+                        <div class="mt-2 space-y-1 text-sm text-green-600 dark:text-green-400">
+                            <p class="font-medium">
+                                {{ __('A new verification link has been sent to your email address.') }}
+                            </p>
+                            <p class="text-xs text-emerald-700 dark:text-emerald-300/80">
+                                {{ __('Please check your spam or junk folder if the message is not in your inbox.') }}
+                            </p>
+                        </div>
                     @endif
                 </div>
             @endif
