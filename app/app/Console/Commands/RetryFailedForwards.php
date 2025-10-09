@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Merchant;
 use App\Models\WebhookEvent;
-use App\Services\Forwarder;
+use App\Services\Salla\WebhookForwarder;
 use Illuminate\Console\Command;
 
 class RetryFailedForwards extends Command
@@ -15,7 +15,7 @@ class RetryFailedForwards extends Command
     public function handle(): int
     {
         $maxAttempts = (int) env('FORWARD_RETRY_SCHEDULE_MAX_ATTEMPTS', 6);
-        $forwarder = new Forwarder();
+        $forwarder = app(WebhookForwarder::class);
 
         WebhookEvent::where('status', 'failed')
             ->where('attempts', '<', $maxAttempts)
@@ -31,16 +31,19 @@ class RetryFailedForwards extends Command
                         continue;
                     }
                     $result = $forwarder->forward($event, $merchant);
-                    $event->update([
-                        'attempts' => $event->attempts + ($result['attempts'] ?? 1),
-                        'last_error' => $result['error'] ?? null,
+
+                    $event->forceFill([
+                        'attempts' => ($event->attempts ?? 0) + ($result['attempts'] ?? 1),
+                        'last_error' => $result['ok'] ? null : ($result['error'] ?? null),
                         'status' => $result['ok'] ? 'sent' : 'failed',
-                    ]);
+                        'response_status' => $result['code'],
+                        'response_body_excerpt' => $result['body'],
+                        'forwarded_at' => now(),
+                    ])->save();
                 }
             }, 'id');
 
         return self::SUCCESS;
     }
 }
-
 

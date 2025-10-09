@@ -32,8 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $middleware->validateCsrfTokens(except: [
-            'webhooks/salla',
-            'app-events/*',
+            'webhooks/salla/app-events',
             'api/actions/*',
         ]);
     })

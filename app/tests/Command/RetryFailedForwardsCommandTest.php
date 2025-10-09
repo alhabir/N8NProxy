@@ -14,10 +14,14 @@ it('retries failed webhook events and updates status', function () {
     Schema::create('merchants', function (Blueprint $table) {
         $table->uuid('id')->primary();
         $table->string('store_id')->nullable();
-        $table->unsignedBigInteger('user_id')->nullable();
+        $table->unsignedBigInteger('claimed_by_user_id')->nullable();
         $table->string('email')->nullable();
         $table->string('salla_merchant_id')->nullable();
         $table->string('store_name')->nullable();
+        $table->string('store_domain')->nullable();
+        $table->text('salla_access_token')->nullable();
+        $table->text('salla_refresh_token')->nullable();
+        $table->timestamp('salla_token_expires_at')->nullable();
         $table->string('n8n_base_url')->nullable();
         $table->string('n8n_webhook_path')->nullable();
         $table->string('n8n_auth_type')->default('none');
@@ -25,6 +29,7 @@ it('retries failed webhook events and updates status', function () {
         $table->boolean('is_active')->default(true);
         $table->boolean('is_approved')->default(false);
         $table->timestamp('last_ping_ok_at')->nullable();
+        $table->timestamp('connected_at')->nullable();
         $table->timestamps();
     });
 
@@ -39,6 +44,9 @@ it('retries failed webhook events and updates status', function () {
         $table->enum('status', ['stored', 'sent', 'skipped', 'failed']);
         $table->unsignedInteger('attempts')->default(0);
         $table->text('last_error')->nullable();
+        $table->unsignedSmallInteger('response_status')->nullable();
+        $table->text('response_body_excerpt')->nullable();
+        $table->timestamp('forwarded_at')->nullable();
         $table->timestamps();
     });
 
@@ -49,11 +57,12 @@ it('retries failed webhook events and updates status', function () {
     $merchant = Merchant::create([
         'store_id' => 'store-1',
         'email' => 'owner@example.com',
-        'merchant_id' => $merchant->id,
         'salla_merchant_id' => 'merchant-1',
         'n8n_base_url' => 'https://retry.example.com',
         'n8n_webhook_path' => '/webhook/test',
         'is_active' => true,
+        'is_approved' => true,
+        'connected_at' => now(),
     ]);
 
     $event = WebhookEvent::create([
@@ -75,4 +84,5 @@ it('retries failed webhook events and updates status', function () {
     expect($event->status)->toBe('sent');
     expect($event->attempts)->toBeGreaterThan(1);
     expect($event->last_error)->toBeNull();
+    expect($event->response_status)->toBe(200);
 });

@@ -3,8 +3,6 @@
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocsController;
-use App\Http\Controllers\SallaAppEventsController;
-use App\Http\Controllers\SallaWebhookController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -15,10 +13,6 @@ Route::get('/', function () {
 })->name('admin.landing');
 
 Route::get('/docs/admin', [DocsController::class, 'admin']);
-
-Route::post('/webhooks/salla', [SallaWebhookController::class, 'ingest']);
-Route::post('/app-events/authorized', [SallaAppEventsController::class, 'authorized']);
-Route::post('/app-events/installed', [SallaAppEventsController::class, 'installed']);
 
 Route::middleware('guest:admin')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('admin.login');

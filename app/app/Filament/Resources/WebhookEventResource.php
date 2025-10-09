@@ -5,7 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\WebhookEventResource\Pages;
 use App\Models\Merchant;
 use App\Models\WebhookEvent;
-use App\Services\Forwarder;
+use App\Services\Salla\WebhookForwarder;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
@@ -46,12 +46,16 @@ class WebhookEventResource extends Resource
                         if (!$merchant) {
                             return;
                         }
-                        $result = app(Forwarder::class)->forward($record, $merchant);
-                        $record->update([
-                            'attempts' => $record->attempts + ($result['attempts'] ?? 1),
-                            'last_error' => $result['error'] ?? null,
+                        $result = app(WebhookForwarder::class)->forward($record, $merchant);
+
+                        $record->forceFill([
+                            'attempts' => ($record->attempts ?? 0) + ($result['attempts'] ?? 1),
+                            'last_error' => $result['ok'] ? null : ($result['error'] ?? null),
                             'status' => $result['ok'] ? 'sent' : 'failed',
-                        ]);
+                            'response_status' => $result['code'],
+                            'response_body_excerpt' => $result['body'],
+                            'forwarded_at' => now(),
+                        ])->save();
                     })
                     ->color('warning')
             ])

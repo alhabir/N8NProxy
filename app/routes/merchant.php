@@ -15,6 +15,8 @@ require __DIR__.'/auth.php';
 
 Route::middleware(['auth:merchant', 'verified'])->group(function () {
     Route::get('/dashboard', [MerchantController::class, 'dashboard'])->name('dashboard');
+    Route::get('/settings/connect-salla', [MerchantController::class, 'connectSalla'])->name('settings.connect-salla');
+    Route::post('/settings/connect-salla/claim', [MerchantController::class, 'claimSalla'])->name('settings.connect-salla.claim');
     Route::get('/settings/n8n', [MerchantController::class, 'n8nSettings'])->name('settings.n8n');
     Route::post('/settings/n8n', [MerchantController::class, 'updateN8nSettings']);
     Route::post('/tests/send-webhook', [MerchantController::class, 'sendTestWebhook'])->name('tests.send-webhook');

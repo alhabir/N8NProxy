@@ -1,48 +1,28 @@
 <?php
 
 return [
-    'signature_header' => 'X-Salla-Signature',
+    'client_id' => env('SALLA_CLIENT_ID'),
+    'client_secret' => env('SALLA_CLIENT_SECRET'),
 
-    'paths' => [
-        'merchant_id' => 'data.store.id',
-        'event_name' => 'event',
-        'event_id' => 'id',
+    'webhook' => [
+        'mode' => env('SALLA_WEBHOOK_MODE', 'token'),
+        'token' => env('SALLA_WEBHOOK_TOKEN'),
+        'token_header' => 'X-Webhook-Token',
+        'token_query_key' => 'token',
     ],
 
-    'paths_overrides' => [
-        // 'product.*' => ['merchant_id' => 'data.store.id'],
+    'headers' => [
+        'event' => 'X-Salla-Event',
+        'event_id' => 'X-Salla-Event-Id',
+        'merchant' => 'X-Salla-Merchant-Id',
     ],
 
-    'supported_events' => [
-        // Order core
-        'order.created','order.updated','order.cancelled','order.deleted',
-        'order.refunded','order.payment.updated','order.status.updated',
-        'order.products.updated','order.coupon.updated','order.total.price.updated',
-        // Order shipments and shipping address
-        'order.shipment.creating','order.shipment.created','order.shipment.cancelled',
-        'order.shipment.return.creating','order.shipment.return.created','order.shipment.return.cancelled',
-        'order.shipping.address.updated',
-        // Customer
-        'customer.created','customer.updated','customer.login','customer.otp.request',
-        // Product
-        'product.created','product.updated','product.deleted','product.available','product.quantity.low',
-        // Category
-        'category.created','category.updated',
-        // Brand
-        'brand.created','brand.updated','brand.deleted',
-        // Cart / coupons
-        'abandoned.cart','coupon.applied',
-        // Invoice
-        'invoice.created',
-        // Special offers
-        'specialoffer.created','specialoffer.updated',
-        // Store / Branch / Tax
-        'store.branch.created','store.branch.updated','store.branch.setDefault','store.branch.activated','store.branch.deleted','storetax.created',
-        // Shipping zones & companies
-        'shipping.zone.created','shipping.zone.updated','shipping.company.created','shipping.company.updated','shipping.company.deleted',
-        // Reviews
-        'review.added',
+    'events' => [
+        'app_prefix' => 'app.',
+    ],
+
+    'forwarding' => [
+        'forwarded_by' => 'N8NProxy',
+        'merchant_header' => 'X-N8NProxy-Merchant-ID',
     ],
 ];
-
-

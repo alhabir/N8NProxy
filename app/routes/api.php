@@ -6,10 +6,13 @@ use App\Http\Controllers\Actions\CustomersController;
 use App\Http\Controllers\Actions\CouponsController;
 use App\Http\Controllers\Actions\CategoriesController;
 use App\Http\Controllers\Actions\ExportsController;
+use App\Http\Controllers\Actions\SallaProxyController;
 use Illuminate\Support\Facades\Route;
 
 Route::domain(config('panels.admin_domain'))->group(function () {
     Route::middleware(['actions.auth'])->prefix('actions')->group(function () {
+        Route::post('/salla', SallaProxyController::class);
+
         Route::prefix('orders')->group(function () {
             Route::get('/', [OrdersController::class, 'index']);
             Route::get('/list', [OrdersController::class, 'index']);

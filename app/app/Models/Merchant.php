@@ -16,11 +16,15 @@ class Merchant extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'user_id',
+        'claimed_by_user_id',
         'store_id',
         'salla_merchant_id',
         'store_name',
+        'store_domain',
         'email',
+        'salla_access_token',
+        'salla_refresh_token',
+        'salla_token_expires_at',
         'n8n_base_url',
         'n8n_webhook_path',
         'n8n_auth_type',
@@ -28,6 +32,7 @@ class Merchant extends Model
         'is_active',
         'is_approved',
         'last_ping_ok_at',
+        'connected_at',
     ];
 
     protected $casts = [
@@ -35,6 +40,10 @@ class Merchant extends Model
         'is_approved' => 'boolean',
         'last_ping_ok_at' => 'datetime',
         'n8n_auth_token' => 'encrypted',
+        'salla_access_token' => 'encrypted',
+        'salla_refresh_token' => 'encrypted',
+        'salla_token_expires_at' => 'datetime',
+        'connected_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -52,9 +61,14 @@ class Merchant extends Model
         return $this->hasMany(WebhookEvent::class);
     }
 
+    public function claimedBy()
+    {
+        return $this->belongsTo(User::class, 'claimed_by_user_id');
+    }
+
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->claimedBy();
     }
 
     public function token()
