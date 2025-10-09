@@ -8,6 +8,7 @@ use App\Models\WebhookEvent;
 use App\Services\Salla\WebhookForwarder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class MerchantController extends Controller
@@ -105,11 +106,10 @@ class MerchantController extends Controller
             return back()->with('warning', 'Please configure your n8n URL first.');
         }
 
-        $testEvent = WebhookEvent::create([
+        $eventData = [
             'merchant_id' => $merchant->id,
             'salla_event' => 'order.created',
             'salla_event_id' => 'test_' . Str::uuid(),
-            'salla_merchant_id' => $merchant->salla_merchant_id,
             'headers' => ['X-Test' => 'true'],
             'payload' => [
                 'event' => 'order.created',
@@ -125,7 +125,13 @@ class MerchantController extends Controller
                 ],
             ],
             'status' => 'stored',
-        ]);
+        ];
+
+        if (Schema::hasColumn('webhook_events', 'salla_merchant_id')) {
+            $eventData['salla_merchant_id'] = $merchant->salla_merchant_id;
+        }
+
+        $testEvent = WebhookEvent::create($eventData);
 
         $success = $this->forwarder->forward($testEvent, $merchant);
 
