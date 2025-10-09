@@ -4,8 +4,13 @@
     </div>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600 dark:text-green-400">
-            {{ __('A new verification link has been sent to the email address you provided during registration.') }}
+        <div class="mb-4 space-y-1 font-medium text-sm text-green-600 dark:text-green-400">
+            <p>
+                {{ __('A new verification link has been sent to the email address you provided during registration.') }}
+            </p>
+            <p class="font-normal text-xs text-emerald-700 dark:text-emerald-300/80">
+                {{ __('Please check your spam or junk folder if the message is not in your inbox.') }}
+            </p>
         </div>
     @endif
 

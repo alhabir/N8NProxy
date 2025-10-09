@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Str;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -37,5 +38,23 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->renderable(function (TokenMismatchException $exception, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => __('Your session expired. Please refresh the page and try again.'),
+                ], 419);
+            }
+
+            $adminDomain = config('panels.admin_domain');
+            $host = $request->getHost();
+            $adminLoginRoute = 'admin.login';
+            $loginRouteName = $adminDomain && ($request->route()?->named('admin.*')
+                || $host === $adminDomain
+                || Str::endsWith($host, '.' . ltrim($adminDomain, '.')))
+                ? $adminLoginRoute
+                : 'login';
+
+            return redirect()->guest(route($loginRouteName))
+                ->with('warning', __('Your session expired. Please log in again.'));
+        });
     })->create();
