@@ -17,6 +17,19 @@
             </div>
         </div>
 
+        <div class="grid gap-4 sm:grid-cols-2">
+            <a href="{{ route('admin.app-events.index', ['event_name' => 'app.installed']) }}" class="group rounded-xl border border-emerald-600/40 bg-emerald-500/10 p-6 shadow transition hover:border-emerald-400/60 hover:bg-emerald-500/15">
+                <p class="text-sm font-medium text-emerald-200/80">App Installs</p>
+                <p class="mt-2 text-3xl font-semibold text-white">{{ number_format($appEventStats['installs'] ?? 0) }}</p>
+                <p class="mt-2 text-xs text-emerald-200/70 group-hover:text-emerald-100">View install activity →</p>
+            </a>
+            <a href="{{ route('admin.app-events.index', ['event_name' => 'app.uninstalled']) }}" class="group rounded-xl border border-rose-600/40 bg-rose-500/10 p-6 shadow transition hover:border-rose-400/60 hover:bg-rose-500/15">
+                <p class="text-sm font-medium text-rose-200/80">App Uninstalls</p>
+                <p class="mt-2 text-3xl font-semibold text-white">{{ number_format($appEventStats['uninstalls'] ?? 0) }}</p>
+                <p class="mt-2 text-xs text-rose-200/70 group-hover:text-rose-100">View uninstall activity →</p>
+            </a>
+        </div>
+
         <div class="grid gap-6 md:grid-cols-3">
             <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-6 shadow">
                 <p class="text-sm text-slate-400">Merchants</p>
