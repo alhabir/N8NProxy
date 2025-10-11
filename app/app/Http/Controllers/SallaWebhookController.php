@@ -23,7 +23,7 @@ class SallaWebhookController extends Controller
 
     public function handle(Request $request): JsonResponse
     {
-        $rawBody = $request->getContent();
+        $rawBody = $request->getContent() ?? '';
         $payload = json_decode($rawBody, true);
 
         if (! is_array($payload)) {
@@ -58,6 +58,7 @@ class SallaWebhookController extends Controller
         ]);
 
         if ($this->isAppEvent($eventName)) {
+            $this->logAppEventDebug($request, $payload, $eventName, $merchantReference);
             $this->storeAppEvent($eventName, $payload, $headers, $merchantReference);
 
             return $this->handleAppEvent($eventName, $payload, $merchantReference);
@@ -89,25 +90,38 @@ class SallaWebhookController extends Controller
 
     private function handleAppStoreAuthorize(array $payload, ?string $merchantReference): JsonResponse
     {
-        $sallaMerchantId = $merchantReference ?? (string) data_get($payload, 'data.store.id');
+        $sallaMerchantId = $merchantReference
+            ?? (string) data_get($payload, 'merchant')
+            ?? (string) data_get($payload, 'data.store.id');
         $storeName = data_get($payload, 'data.store.name');
         $storeDomain = $this->resolveStoreDomain($payload);
-        $storeEmail = Str::lower((string) data_get($payload, 'data.store.email'));
-        $accessToken = data_get($payload, 'data.tokens.access_token');
-        $refreshToken = data_get($payload, 'data.tokens.refresh_token');
-        $expiresIn = (int) data_get($payload, 'data.tokens.expires_in', 3600);
+        $storeEmailRaw = data_get($payload, 'data.store.email');
+        $storeEmail = is_string($storeEmailRaw) && $storeEmailRaw !== ''
+            ? Str::lower($storeEmailRaw)
+            : null;
+        $tokens = $this->extractTokenPayload($payload);
+        $accessToken = $tokens['access'] ?? null;
+        $refreshToken = $tokens['refresh'] ?? null;
+        $expiresRaw = $tokens['expires'] ?? null;
 
-        if (! $sallaMerchantId || ! $accessToken || ! $refreshToken) {
-            Log::warning('Salla authorize event missing required data', [
+        if (! $sallaMerchantId) {
+            Log::warning('Salla authorize event missing merchant id', [
                 'merchant_reference' => $merchantReference,
-                'has_access_token' => (bool) $accessToken,
-                'has_refresh_token' => (bool) $refreshToken,
             ]);
 
             return response()->json([
                 'ok' => false,
-                'error' => 'missing_required_data',
+                'kind' => 'app',
+                'event' => 'app.store.authorize',
+                'error' => 'missing_merchant',
             ], 422);
+        }
+
+        $tokensSaved = false;
+        $expiresAt = null;
+
+        if ($accessToken && $refreshToken) {
+            $expiresAt = $this->resolveTokenExpiration($expiresRaw) ?? Carbon::now()->addSeconds(3600);
         }
 
         DB::transaction(function () use (
@@ -117,7 +131,8 @@ class SallaWebhookController extends Controller
             $storeEmail,
             $accessToken,
             $refreshToken,
-            $expiresIn
+            $expiresAt,
+            &$tokensSaved
         ) {
             /** @var Merchant $merchant */
             $merchant = Merchant::firstOrNew(['salla_merchant_id' => $sallaMerchantId]);
@@ -127,37 +142,57 @@ class SallaWebhookController extends Controller
                 $merchant->is_active = true;
             }
 
-            $merchant->store_name = $storeName ?: $merchant->store_name;
-            $merchant->store_domain = $storeDomain ?: $merchant->store_domain;
-            $merchant->email = $storeEmail ?: $merchant->email;
-            $merchant->salla_access_token = $accessToken;
-            $merchant->salla_refresh_token = $refreshToken;
-            $merchant->salla_token_expires_at = now()->addSeconds(max(60, $expiresIn));
-            $merchant->is_approved = true;
-            $merchant->connected_at = now();
+            $merchant->store_name = $storeName ?? $merchant->store_name;
+            $merchant->store_domain = $storeDomain ?? $merchant->store_domain;
+            $merchant->email = $storeEmail ?? $merchant->email;
+
+            if ($accessToken && $refreshToken) {
+                $tokensSaved = true;
+                $merchant->salla_access_token = $accessToken;
+                $merchant->salla_refresh_token = $refreshToken;
+                if ($expiresAt) {
+                    $merchant->salla_token_expires_at = $expiresAt;
+                }
+                $merchant->is_approved = true;
+                $merchant->is_active = true;
+                $merchant->connected_at = $merchant->connected_at ?? Carbon::now();
+            }
+
             $merchant->save();
 
-            MerchantToken::updateOrCreate(
-                ['salla_merchant_id' => $sallaMerchantId],
-                [
-                    'merchant_id' => $merchant->id,
-                    'access_token' => $accessToken,
-                    'refresh_token' => $refreshToken,
-                    'access_token_expires_at' => now()->addSeconds(max(60, $expiresIn)),
-                ]
-            );
+            if ($tokensSaved) {
+                MerchantToken::updateOrCreate(
+                    ['salla_merchant_id' => $sallaMerchantId],
+                    [
+                        'merchant_id' => $merchant->id,
+                        'access_token' => $accessToken,
+                        'refresh_token' => $refreshToken,
+                        'access_token_expires_at' => $expiresAt,
+                    ]
+                );
+            }
         });
+
+        if (! $tokensSaved) {
+            Log::warning('Salla authorize payload missing tokens in known shapes', [
+                'salla_merchant_id' => $sallaMerchantId,
+            ]);
+        }
 
         Log::info('Salla merchant authorized', [
             'salla_merchant_id' => $sallaMerchantId,
             'store_name' => $storeName,
             'store_domain' => $storeDomain,
+            'tokens_saved' => $tokensSaved,
         ]);
 
         return response()->json([
             'ok' => true,
             'kind' => 'app',
             'event' => 'app.store.authorize',
+            'merchant' => $sallaMerchantId,
+            'tokens_saved' => $tokensSaved,
+            'needs_reauth' => ! $tokensSaved,
         ]);
     }
 
@@ -166,7 +201,10 @@ class SallaWebhookController extends Controller
         $sallaMerchantId = $merchantReference ?? (string) data_get($payload, 'data.store.id');
         $storeName = data_get($payload, 'data.store.name');
         $storeDomain = $this->resolveStoreDomain($payload);
-        $storeEmail = Str::lower((string) data_get($payload, 'data.store.email'));
+        $storeEmailRaw = data_get($payload, 'data.store.email');
+        $storeEmail = is_string($storeEmailRaw) && $storeEmailRaw !== ''
+            ? Str::lower($storeEmailRaw)
+            : null;
 
         if (! $sallaMerchantId) {
             Log::warning('Salla app.installed missing merchant id');
@@ -474,5 +512,189 @@ class SallaWebhookController extends Controller
 
             return null;
         }
+    }
+
+    private function logAppEventDebug(Request $request, array $payload, string $eventName, ?string $merchantReference): void
+    {
+        $headers = $this->encodeForLog($this->headersForDebug($request), 2048);
+        $payloadSample = $this->buildPayloadSampleForLog($payload);
+
+        Log::info('Salla webhook received (debug)', [
+            'event' => $eventName,
+            'merchant_reference' => $merchantReference,
+            'headers' => $headers,
+            'payload_sample' => $payloadSample,
+        ]);
+    }
+
+    private function headersForDebug(Request $request): array
+    {
+        $allowed = [
+            'x-salla-event',
+            'x-salla-event-id',
+            'x-salla-merchant-id',
+            'content-type',
+            'user-agent',
+        ];
+
+        $sanitized = [];
+
+        foreach ($allowed as $header) {
+            $value = $request->headers->get($header);
+
+            if ($value === null) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $value = implode(', ', $value);
+            }
+
+            $sanitized[$header] = $this->maskTokenLikeValue($value);
+        }
+
+        return $sanitized;
+    }
+
+    private function buildPayloadSampleForLog(array $payload): string
+    {
+        $copy = $payload;
+
+        array_walk_recursive($copy, function (&$value) {
+            $value = $this->maskTokenLikeValue($value);
+        });
+
+        return $this->encodeForLog($copy, 4096);
+    }
+
+    private function encodeForLog(array $data, int $limit): string
+    {
+        $encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if ($encoded === false) {
+            return '{}';
+        }
+
+        return $this->truncateForLog($encoded, $limit);
+    }
+
+    private function truncateForLog(string $value, int $limit): string
+    {
+        if (mb_strlen($value, 'UTF-8') <= $limit) {
+            return $value;
+        }
+
+        return mb_strimwidth($value, 0, $limit, '…', 'UTF-8');
+    }
+
+    private function maskTokenLikeValue(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            $trimmed = trim($value);
+
+            if (mb_strlen($trimmed, 'UTF-8') >= 20) {
+                $prefix = mb_substr($trimmed, 0, 6, 'UTF-8');
+                $suffix = mb_substr($trimmed, -4, null, 'UTF-8');
+
+                return $prefix . '***' . $suffix;
+            }
+
+            return $trimmed;
+        }
+
+        return $value;
+    }
+
+    private function extractTokenPayload(array $payload): array
+    {
+        return [
+            'access' => $this->firstNonEmpty($payload, [
+                'data.access_token',
+                'data.token.access_token',
+                'data.tokens.access_token',
+                'data.authorization.access_token',
+            ]),
+            'refresh' => $this->firstNonEmpty($payload, [
+                'data.refresh_token',
+                'data.token.refresh_token',
+                'data.tokens.refresh_token',
+                'data.authorization.refresh_token',
+            ]),
+            'expires' => $this->firstNonEmpty($payload, [
+                'data.expires',
+                'data.expires_in',
+                'data.token.expires',
+                'data.token.expires_in',
+                'data.tokens.expires',
+                'data.tokens.expires_in',
+                'data.authorization.expires',
+                'data.authorization.expires_in',
+            ]),
+        ];
+    }
+
+    private function firstNonEmpty(array $payload, array $paths): mixed
+    {
+        foreach ($paths as $path) {
+            $value = data_get($payload, $path);
+
+            if ($value === null) {
+                continue;
+            }
+
+            if (is_string($value) && trim($value) === '') {
+                continue;
+            }
+
+            return $value;
+        }
+
+        return null;
+    }
+
+    private function resolveTokenExpiration(mixed $expires): ?Carbon
+    {
+        if ($expires instanceof Carbon) {
+            return $expires;
+        }
+
+        if (is_numeric($expires)) {
+            $value = (int) $expires;
+
+            if ($value <= 0) {
+                return null;
+            }
+
+            $now = Carbon::now();
+
+            if ($value > $now->timestamp + 60) {
+                return Carbon::createFromTimestamp($value);
+            }
+
+            return $now->addSeconds($value);
+        }
+
+        if (is_string($expires)) {
+            $trimmed = trim($expires);
+
+            if ($trimmed === '') {
+                return null;
+            }
+
+            if (is_numeric($trimmed)) {
+                return $this->resolveTokenExpiration((int) $trimmed);
+            }
+
+            try {
+                return Carbon::parse($trimmed);
+            } catch (\Throwable $exception) {
+                Log::debug('Unable to parse Salla token expires value', [
+                    'raw' => $trimmed,
+                    'exception' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        return null;
     }
 }
