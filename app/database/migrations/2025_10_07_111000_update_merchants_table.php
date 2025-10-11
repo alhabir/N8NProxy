@@ -72,7 +72,13 @@ return new class extends Migration
             }
         }
 
-        Merchant::query()
+        $merchantQuery = Merchant::query();
+
+        if (!Schema::hasColumn('merchants', 'deleted_at')) {
+            $merchantQuery = $merchantQuery->withoutGlobalScopes();
+        }
+
+        $merchantQuery
             ->select(array_unique($selectColumns))
             ->orderBy('id')
             ->chunk(100, function ($chunk) use ($columnExists) {
@@ -85,7 +91,9 @@ return new class extends Migration
                     }
 
                     if (($columnExists['email'] ?? false) && ($columnExists['user_id'] ?? false) && !$merchant->user_id && $merchant->email) {
-                        $user = User::where('email', $merchant->email)->first();
+                        $user = Schema::hasTable('users')
+                            ? User::where('email', $merchant->email)->first()
+                            : null;
                         if ($user) {
                             $merchant->user_id = $user->id;
                             $dirty = true;
