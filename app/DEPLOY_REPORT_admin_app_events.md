@@ -180,3 +180,34 @@ Did you mean one of these?
 ```
 
 UTC 2025-10-11 10:25:24
+﻿---
+
+## Server Verification – 2025-10-11 11:15:00 UTC
+
+### curl -I https://app.n8ndesigner.com/admin
+```
+HTTP/1.1 302 Found
+Server: nginx/1.26.3 (Ubuntu)
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+Cache-Control: no-cache, private
+```
+
+### curl -I https://app.n8ndesigner.com/admin/app-events
+```
+HTTP/1.1 302 Found
+Server: nginx/1.26.3 (Ubuntu)
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+Cache-Control: no-cache, private
+```
+
+### Recent app.* log lines
+```
+[2025-10-11 14:13:33] production.INFO: Salla webhook received {"event":"app.installed","event_id":"123","merchant_reference":"999001","is_app_event":true} 
+[2025-10-11 14:13:33] production.INFO: Salla app event stored {"event_id":"0d5dccd1-e3d6-44f2-b54a-71d912c59d70","event_name":"app.installed","salla_merchant_id":"999001","merchant_id":null} 
+[2025-10-11 14:13:33] production.INFO: Salla webhook received {"event":"app.uninstalled","event_id":"123","merchant_reference":"999001","is_app_event":true} 
+[2025-10-11 14:13:33] production.INFO: Salla app event stored {"event_id":"f3a022ee-0c23-45d0-9c94-1bb3fe3935f8","event_name":"app.uninstalled","salla_merchant_id":"999001","merchant_id":"b690326d-b413-4d96-833d-e0e177861fed"} 
+```
+
+Status: Synthetic app events accepted and persisted; admin endpoints return 302 for unauthenticated requests.
