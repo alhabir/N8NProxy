@@ -11,28 +11,30 @@ class VerifySallaWebhookToken
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $mode = config('salla.webhook.mode', 'token');
+        $expectedToken = env('SALLA_WEBHOOK_TOKEN');
 
-        if ($mode === 'token') {
-            $expected = (string) config('salla.webhook.token');
-            $headerName = config('salla.webhook.token_header', 'X-Webhook-Token');
-            $queryKey = config('salla.webhook.token_query_key', 'token');
+        if (! is_string($expectedToken) || trim($expectedToken) === '') {
+            $expectedToken = config('salla.webhook.token');
+        }
 
-            $provided = $request->header($headerName) ?? $request->query($queryKey);
+        $expected = is_string($expectedToken) ? trim($expectedToken) : null;
 
-            if (empty($expected) || ! is_string($provided) || ! hash_equals($expected, $provided)) {
-                Log::warning('Salla webhook rejected due to invalid token', [
-                    'path' => $request->path(),
-                    'mode' => $mode,
-                    'has_header' => $request->headers->has($headerName),
-                    'has_query' => $request->query->has($queryKey),
-                ]);
+        $providedToken = $request->header('X-Webhook-Token')
+            ?? $request->header('X-Salla-Webhook-Token')
+            ?? $request->query('token');
+        $provided = is_string($providedToken) ? trim($providedToken) : null;
 
-                return response()->json([
-                    'ok' => false,
-                    'error' => 'invalid_token',
-                ], 401);
-            }
+        if ($expected === null || $expected === '' || $provided === null || $provided === '' || $provided !== $expected) {
+            Log::warning('Invalid Salla webhook token', [
+                'has_header' => $request->hasHeader('X-Webhook-Token'),
+                'has_alt_header' => $request->hasHeader('X-Salla-Webhook-Token'),
+                'has_query' => $request->query('token') !== null,
+            ]);
+
+            return response()->json([
+                'ok' => false,
+                'error' => 'invalid-token',
+            ], 401);
         }
 
         return $next($request);
