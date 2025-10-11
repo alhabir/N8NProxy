@@ -19,6 +19,7 @@
         <a href="{{ route('admin.index') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.index') ? 'bg-slate-800 text-white' : '' }}">Dashboard</a>
         <a href="{{ route('admin.merchants') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.merchants') ? 'bg-slate-800 text-white' : '' }}">Merchants</a>
         <a href="{{ route('admin.webhooks') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.webhooks') ? 'bg-slate-800 text-white' : '' }}">Webhooks</a>
+        <a href="{{ route('admin.app-events.index') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.app-events.index') ? 'bg-slate-800 text-white' : '' }}">App Events</a>
         <a href="{{ route('admin.actions-audit') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.actions-audit') ? 'bg-slate-800 text-white' : '' }}">Actions Audit</a>
         <a href="{{ route('admin.app-settings') }}" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800/70 transition {{ request()->routeIs('admin.app-settings') ? 'bg-slate-800 text-white' : '' }}">Settings</a>
         @auth('admin')

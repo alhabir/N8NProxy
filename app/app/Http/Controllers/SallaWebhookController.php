@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppEvent;
 use App\Models\Merchant;
 use App\Models\MerchantToken;
 use App\Models\WebhookEvent;
@@ -10,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class SallaWebhookController extends Controller
@@ -56,6 +58,8 @@ class SallaWebhookController extends Controller
         ]);
 
         if ($this->isAppEvent($eventName)) {
+            $this->storeAppEvent($eventName, $payload, $headers, $merchantReference);
+
             return $this->handleAppEvent($eventName, $payload, $merchantReference);
         }
 
@@ -364,9 +368,18 @@ class SallaWebhookController extends Controller
         $headerName = config('salla.headers.merchant', 'X-Salla-Merchant-Id');
         $headerValue = $this->getHeaderValue($headers, $headerName);
 
+        $payloadMerchant = data_get($payload, 'merchant');
         $payloadId = data_get($payload, 'data.store.id');
 
-        return $headerValue ?: ($payloadId ? (string) $payloadId : null);
+        if ($headerValue) {
+            return (string) $headerValue;
+        }
+
+        if ($payloadMerchant) {
+            return (string) $payloadMerchant;
+        }
+
+        return $payloadId ? (string) $payloadId : null;
     }
 
     private function resolveStoreDomain(array $payload): ?string
@@ -408,5 +421,58 @@ class SallaWebhookController extends Controller
         $prefix = config('salla.events.app_prefix', 'app.');
 
         return Str::startsWith($eventName, $prefix);
+    }
+
+    private function storeAppEvent(string $eventName, array $payload, array $headers, ?string $merchantReference): AppEvent
+    {
+        $sallaMerchantId = $merchantReference
+            ?: $this->resolveMerchantId($headers, $payload)
+            ?: data_get($payload, 'data.store.id');
+
+        $merchant = $sallaMerchantId
+            ? Merchant::query()->where('salla_merchant_id', $sallaMerchantId)->first()
+            : null;
+
+        $eventCreatedAt = $this->resolveAppEventTimestamp($payload);
+
+        $appEvent = AppEvent::create([
+            'event_name' => $eventName,
+            'salla_merchant_id' => $sallaMerchantId,
+            'merchant_id' => $merchant?->id,
+            'payload' => $payload,
+            'event_created_at' => $eventCreatedAt,
+        ]);
+
+        Log::info('Salla app event stored', [
+            'event_id' => $appEvent->id,
+            'event_name' => $eventName,
+            'salla_merchant_id' => $sallaMerchantId,
+            'merchant_id' => $merchant?->id,
+        ]);
+
+        return $appEvent;
+    }
+
+    private function resolveAppEventTimestamp(array $payload): ?Carbon
+    {
+        $timestamp = data_get($payload, 'created_at')
+            ?? data_get($payload, 'data.created_at')
+            ?? data_get($payload, 'data.store.created_at')
+            ?? data_get($payload, 'timestamp');
+
+        if (! $timestamp) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($timestamp);
+        } catch (\Throwable $exception) {
+            Log::debug('Unable to parse app event timestamp', [
+                'timestamp' => $timestamp,
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppEvent;
 use App\Models\AppSetting;
 use App\Models\Merchant;
 use App\Models\SallaActionAudit;
@@ -18,10 +19,17 @@ class AdminController extends Controller
 
     public function index()
     {
+        $appEventStats = [
+            'installs' => AppEvent::query()->where('event_name', 'app.installed')->count(),
+            'uninstalls' => AppEvent::query()->where('event_name', 'app.uninstalled')->count(),
+        ];
+
         $counts = [
             'merchants' => Merchant::count(),
             'webhook_events' => WebhookEvent::count(),
             'salla_action_audits' => SallaActionAudit::count(),
+            'app_installs' => $appEventStats['installs'],
+            'app_uninstalls' => $appEventStats['uninstalls'],
         ];
 
         $recentWebhooks = WebhookEvent::query()
@@ -38,6 +46,7 @@ class AdminController extends Controller
             'counts' => $counts,
             'recentWebhooks' => $recentWebhooks,
             'recentActions' => $recentActions,
+            'appEventStats' => $appEventStats,
         ]);
     }
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AppEventsController;
 use App\Http\Controllers\Admin\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DocsController;
@@ -28,6 +29,7 @@ Route::middleware(['auth:admin', 'admin'])->prefix('admin')->name('admin.')->gro
     Route::post('/app-settings', [AdminController::class, 'appSettingsSave'])->name('app-settings.update');
     Route::get('/webhooks', [AdminController::class, 'webhooks'])->name('webhooks');
     Route::get('/actions-audit', [AdminController::class, 'actionsAudit'])->name('actions-audit');
+    Route::get('/app-events', [AppEventsController::class, 'index'])->name('app-events.index');
     Route::post('/tests/send-webhook/{merchant}', [AdminController::class, 'sendTestWebhook'])->name('tests.send-webhook');
 });
 
